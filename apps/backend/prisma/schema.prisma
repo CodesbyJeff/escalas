@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ESCALANTE
+  MILITAR
+  GESTOR
+}
+
+model User {
+  id              Int           @id @default(autoincrement())
+  cpf             String        @unique
+  matricula       String?       @unique
+  nome            String
+  nome_curto      String?
+  email           String?       @unique
+  phone           String?
+  posto           String?
+  sisbom_id       String?       @unique
+  ativo           Boolean       @default(true)
+  is_super_admin  Boolean       @default(false)
+  last_sync_at    DateTime
+  lotacoes        UserLotacao[]
+  roles           UserRole[]
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+}
+
+model Lotacao {
+  id              Int           @id
+  sigla           String        @unique
+  nome            String
+  lotacao_pai_id  Int?
+  nivel           Int
+  operacional     Boolean       @default(false)
+  externo         Boolean       @default(false)
+  pai             Lotacao?      @relation("LotacaoHierarquia", fields: [lotacao_pai_id], references: [id])
+  filhas          Lotacao[]     @relation("LotacaoHierarquia")
+  user_lotacoes   UserLotacao[]
+  user_roles      UserRole[]
+}
+
+model UserLotacao {
+  user_id    Int
+  lotacao_id Int
+  nivel      Int
+  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  lotacao    Lotacao @relation(fields: [lotacao_id], references: [id])
+  @@id([user_id, lotacao_id])
+}
+
+model UserRole {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  role        Role
+  lotacao_id  Int?
+  created_by  Int
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  lotacao     Lotacao? @relation(fields: [lotacao_id], references: [id])
+  @@unique([user_id, role, lotacao_id])
+}
+
+model SyncCursor {
+  entidade            String   @id
+  last_sync_at        DateTime
+  last_mirror_ref_at  DateTime
+}
