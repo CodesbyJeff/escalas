@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { ok, fail } from '../utils/response.js';
 import { adminService } from '../services/admin.service.js';
 import { HttpError } from '../services/auth.service.js';
+import { syncService } from '../services/sync.service.js';
 import { prisma } from '../config/db.js';
 
 export const adminController = {
@@ -33,6 +34,15 @@ export const adminController = {
       const lotacao_id = req.query.lotacao_id ? Number(req.query.lotacao_id) : undefined;
       const list = await adminService.listarUsuarios({ q, lotacao_id }, prisma);
       ok(res, 'Usuários listados.', list);
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async resync(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await syncService.runOnce(prisma);
+      ok(res, 'Resync disparado.', null);
     } catch (e) {
       next(e);
     }
