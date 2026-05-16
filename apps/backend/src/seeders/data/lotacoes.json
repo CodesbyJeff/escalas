@@ -1,0 +1,8 @@
+[
+  { "id": 2,   "sigla": "COBM",   "nome": "Comando Operacional Bombeiro Militar", "lotacao_pai_id": null, "nivel": 1, "operacional": false, "externo": false },
+  { "id": 14,  "sigla": "GBSA",   "nome": "Grupamento de Busca e Salvamento Aquático", "lotacao_pai_id": 2, "nivel": 2, "operacional": true, "externo": false },
+  { "id": 100, "sigla": "1BBM",   "nome": "1º Batalhão Bombeiro Militar - Natal", "lotacao_pai_id": 2, "nivel": 2, "operacional": true, "externo": false },
+  { "id": 101, "sigla": "2BBM",   "nome": "2º Batalhão Bombeiro Militar - Parnamirim", "lotacao_pai_id": 2, "nivel": 2, "operacional": true, "externo": false },
+  { "id": 102, "sigla": "3BBM",   "nome": "3º Batalhão Bombeiro Militar - Goianinha", "lotacao_pai_id": 2, "nivel": 2, "operacional": true, "externo": false },
+  { "id": 103, "sigla": "ZN-NTL", "nome": "Companhia Independente Zona Norte - Natal", "lotacao_pai_id": 2, "nivel": 2, "operacional": true, "externo": false }
+]
