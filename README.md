@@ -8,6 +8,6 @@ Monorepo do sistema de escalas. Stack: TS + Express + Prisma + Postgres + (futur
 pnpm install
 cp .env.example .env
 docker compose up -d
-pnpm --filter backend prisma:migrate
+pnpm --filter @escalas/backend prisma:migrate
 pnpm dev
 ```
