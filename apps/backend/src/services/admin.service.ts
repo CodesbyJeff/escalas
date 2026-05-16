@@ -12,21 +12,22 @@ export const adminService = {
       if (!lot) throw new HttpError(404, 'Lotação não encontrada.');
     }
 
-    return prisma.userRole.upsert({
+    const existing = await prisma.userRole.findFirst({
       where: {
-        user_id_role_lotacao_id: {
-          user_id: input.user_id,
-          role: input.role,
-          lotacao_id: input.lotacao_id ?? null,
-        },
+        user_id: input.user_id,
+        role: input.role,
+        lotacao_id: input.lotacao_id ?? null,
       },
-      create: {
+    });
+    if (existing) return existing;
+
+    return prisma.userRole.create({
+      data: {
         user_id: input.user_id,
         role: input.role,
         lotacao_id: input.lotacao_id,
         created_by: createdBy,
       },
-      update: {},
     });
   },
 
