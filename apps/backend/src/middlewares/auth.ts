@@ -3,12 +3,6 @@ import { verifyAccess } from '../config/jwt.js';
 import { prisma } from '../config/db.js';
 import { fail } from '../utils/response.js';
 
-declare module 'express' {
-  interface Request {
-    user?: { id: number; cpf: string; is_super_admin: boolean };
-  }
-}
-
 export const authMiddleware: RequestHandler = async (req, res, next) => {
   const header = req.header('authorization');
   if (!header?.startsWith('Bearer ')) return fail(res, 'Não autenticado.', 401);
