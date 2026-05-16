@@ -12,3 +12,4 @@ adminRoutes.get('/usuarios', adminController.listarUsuarios);
 adminRoutes.post('/roles', validate(atribuirRoleSchema), adminController.atribuirRole);
 adminRoutes.delete('/roles/:id', adminController.removerRole);
 adminRoutes.post('/resync', adminController.resync);
+adminRoutes.post('/bulk-sync', adminController.bulkSync);
