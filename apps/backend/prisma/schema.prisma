@@ -25,6 +25,7 @@ model User {
   sisbom_id       String?       @unique
   ativo           Boolean       @default(true)
   is_super_admin  Boolean       @default(false)
+  senha_hash      String?       // bcrypt; NULL = autentica via SISBOM AD
   last_sync_at    DateTime
   lotacoes        UserLotacao[]
   roles           UserRole[]
