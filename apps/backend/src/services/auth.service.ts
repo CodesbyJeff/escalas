@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { signAccess, signRefresh, verifyRefresh } from '../config/jwt.js';
 import { sisbomClient } from '../integrations/sisbom/client.js';
 import type { AuthUser, Role } from '@escalas/shared-types';
@@ -39,10 +40,22 @@ async function buildAuthUser(prisma: PrismaClient, userId: number): Promise<Auth
 
 export const authService = {
   async login(input: LoginInput, deps: AuthDeps): Promise<LoginResult> {
+    const user = await deps.prisma.user.findUnique({ where: { cpf: input.cpf } });
+
+    // Modo local: senha_hash setado → bcrypt, sem SISBOM
+    if (user?.senha_hash) {
+      if (!user.ativo) throw new HttpError(403, 'Usuário inativo.');
+      const match = await bcrypt.compare(input.senha, user.senha_hash);
+      if (!match) throw new HttpError(401, 'CPF ou senha inválidos.');
+      const token = signAccess({ user_id: user.id, cpf: user.cpf });
+      const refresh_token = signRefresh({ user_id: user.id });
+      const authUser = await buildAuthUser(deps.prisma, user.id);
+      return { token, refresh_token, user: authUser };
+    }
+
+    // Modo SISBOM AD (fluxo atual)
     const ok = await deps.sisbom.loginAd(input.cpf, input.senha);
     if (!ok) throw new HttpError(401, 'CPF ou senha inválidos.');
-
-    const user = await deps.prisma.user.findUnique({ where: { cpf: input.cpf } });
     if (!user) throw new HttpError(404, 'Usuário ainda não sincronizado do SISBOM.');
     if (!user.ativo) throw new HttpError(403, 'Usuário inativo.');
 
