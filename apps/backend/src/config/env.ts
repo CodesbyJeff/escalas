@@ -16,6 +16,9 @@ const envSchema = z.object({
   SISBOM_EXTERNAL_BASE_URL: z.string().url(),
   SISBOM_API_KEY: z.string().min(1),
   SYNC_INTERVAL_CRON: z.string().default('*/5 * * * *'),
+  ADMIN_LOCAL_CPF: z.string().default('99999999900'),
+  ADMIN_LOCAL_NOME: z.string().default('Admin Operacional Escalas'),
+  ADMIN_LOCAL_PASSWORD: z.string().min(8).optional(),
 });
 
 export const env = envSchema.parse(process.env);
