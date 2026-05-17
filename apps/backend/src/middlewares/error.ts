@@ -1,6 +1,6 @@
 import type { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
-import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { logger } from '../utils/logger.js';
 import { fail } from '../utils/response.js';
 import { HttpError } from '../utils/errors.js';
@@ -10,10 +10,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     const msg = err.errors[0]?.message ?? 'Dados inválidos.';
     return fail(res, msg, 422);
   }
-  if (err instanceof TokenExpiredError) {
+  if (err instanceof jwt.TokenExpiredError) {
     return fail(res, 'Token expirado.', 401);
   }
-  if (err instanceof JsonWebTokenError) {
+  if (err instanceof jwt.JsonWebTokenError) {
     return fail(res, 'Token inválido.', 401);
   }
   if (err instanceof HttpError) {
