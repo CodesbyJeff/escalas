@@ -42,4 +42,14 @@ describe('admin.service.atribuirRole', () => {
     const count = await testPrisma.userRole.count({ where: { user_id: user.id } });
     expect(count).toBe(1);
   });
+
+  it('idempotente sob concorrência: 5 chamadas paralelas resultam em 1 role', async () => {
+    const { user, lotacao, admin } = await seedUserAndLotacao();
+    const input = { user_id: user.id, role: 'ESCALANTE' as const, lotacao_id: lotacao.id };
+    await Promise.all(
+      Array.from({ length: 5 }, () => adminService.atribuirRole(input, admin.id, testPrisma)),
+    );
+    const count = await testPrisma.userRole.count({ where: { user_id: user.id } });
+    expect(count).toBe(1);
+  });
 });
