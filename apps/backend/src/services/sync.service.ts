@@ -45,10 +45,21 @@ export const syncService = {
         }
         const resp = await sisbomClient.getEvents({ since, entities: entidade });
         for (const ev of resp.events) {
-          await prisma.$transaction(async (tx) => {
-            if (ev.entity === 'users') await userService.applyEvent(ev, tx as PrismaClient);
-          });
-          lastSeenTs = ev.timestamp;
+          try {
+            await prisma.$transaction(async (tx) => {
+              if (ev.entity === 'users') await userService.applyEvent(ev, tx as PrismaClient);
+            });
+            lastSeenTs = ev.timestamp;
+          } catch (e) {
+            logger.error('sync_event_failed_skipping', {
+              entidade,
+              eventTs: ev.timestamp,
+              sisbom_id: ev.data?._id,
+              err: (e as Error).message,
+            });
+            // avança cursor mesmo em erro — evita travar permanente em bad data
+            lastSeenTs = ev.timestamp;
+          }
         }
         if (!resp.has_more) break;
         since = resp.next_cursor ?? lastSeenTs;
