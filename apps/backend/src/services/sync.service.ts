@@ -4,6 +4,7 @@ import { userService } from './user.service.js';
 import { logger } from '../utils/logger.js';
 
 const TRACKED = ['users'] as const;
+const MAX_SYNC_ITER = 1000;
 
 async function getCursor(prisma: PrismaClient, entidade: string) {
   return prisma.syncCursor.upsert({
@@ -35,8 +36,13 @@ export const syncService = {
 
       let since = cursor.last_sync_at.toISOString();
       let lastSeenTs = since;
+      let iter = 0;
       // eslint-disable-next-line no-constant-condition
       while (true) {
+        if (++iter > MAX_SYNC_ITER) {
+          logger.error('sync_max_iter_exceeded', { entidade, iter, since });
+          break;
+        }
         const resp = await sisbomClient.getEvents({ since, entities: entidade });
         for (const ev of resp.events) {
           await prisma.$transaction(async (tx) => {
