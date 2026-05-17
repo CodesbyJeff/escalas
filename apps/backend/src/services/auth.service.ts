@@ -4,7 +4,7 @@ import { signAccess, signRefresh, verifyRefresh } from '../config/jwt.js';
 import { sisbomClient } from '../integrations/sisbom/client.js';
 import type { AuthUser, Role } from '@escalas/shared-types';
 import type { LoginInput } from '@escalas/shared-schemas';
-import { HttpError } from '../utils/errors.js';
+import { ForbiddenError, NotFoundError, UnauthorizedError } from '../utils/errors.js';
 
 export interface AuthDeps {
   prisma: PrismaClient;
@@ -17,12 +17,16 @@ export interface LoginResult {
   user: AuthUser;
 }
 
-async function buildAuthUser(prisma: PrismaClient, userId: number): Promise<AuthUser> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { roles: true },
-  });
-  if (!user) throw new HttpError(404, 'Usuário não encontrado.');
+interface UserWithRoles {
+  id: number;
+  cpf: string;
+  matricula: string | null;
+  nome: string;
+  is_super_admin: boolean;
+  roles: Array<{ role: string; lotacao_id: number | null }>;
+}
+
+function toAuthUser(user: UserWithRoles): AuthUser {
   return {
     id: user.id,
     cpf: user.cpf,
@@ -33,31 +37,44 @@ async function buildAuthUser(prisma: PrismaClient, userId: number): Promise<Auth
   };
 }
 
+function makeLoginResult(user: UserWithRoles): LoginResult {
+  return {
+    token: signAccess({ user_id: user.id, cpf: user.cpf }),
+    refresh_token: signRefresh({ user_id: user.id }),
+    user: toAuthUser(user),
+  };
+}
+
+async function buildAuthUser(prisma: PrismaClient, opts: { id?: number; cpf?: string }): Promise<AuthUser> {
+  const user = await prisma.user.findUnique({
+    where: opts.id !== undefined ? { id: opts.id } : { cpf: opts.cpf! },
+    include: { roles: true },
+  });
+  if (!user) throw new NotFoundError('Usuário não encontrado.');
+  return toAuthUser(user);
+}
+
 export const authService = {
   async login(input: LoginInput, deps: AuthDeps): Promise<LoginResult> {
-    const user = await deps.prisma.user.findUnique({ where: { cpf: input.cpf } });
+    const user = await deps.prisma.user.findUnique({
+      where: { cpf: input.cpf },
+      include: { roles: true },
+    });
 
     // Modo local: senha_hash setado → bcrypt, sem SISBOM
     if (user?.senha_hash) {
-      if (!user.ativo) throw new HttpError(403, 'Usuário inativo.');
+      if (!user.ativo) throw new ForbiddenError('Usuário inativo.');
       const match = await bcrypt.compare(input.senha, user.senha_hash);
-      if (!match) throw new HttpError(401, 'CPF ou senha inválidos.');
-      const token = signAccess({ user_id: user.id, cpf: user.cpf });
-      const refresh_token = signRefresh({ user_id: user.id });
-      const authUser = await buildAuthUser(deps.prisma, user.id);
-      return { token, refresh_token, user: authUser };
+      if (!match) throw new UnauthorizedError('CPF ou senha inválidos.');
+      return makeLoginResult(user);
     }
 
     // Modo SISBOM AD (fluxo atual)
     const ok = await deps.sisbom.loginAd(input.cpf, input.senha);
-    if (!ok) throw new HttpError(401, 'CPF ou senha inválidos.');
-    if (!user) throw new HttpError(404, 'Usuário ainda não sincronizado do SISBOM.');
-    if (!user.ativo) throw new HttpError(403, 'Usuário inativo.');
-
-    const token = signAccess({ user_id: user.id, cpf: user.cpf });
-    const refresh_token = signRefresh({ user_id: user.id });
-    const authUser = await buildAuthUser(deps.prisma, user.id);
-    return { token, refresh_token, user: authUser };
+    if (!ok) throw new UnauthorizedError('CPF ou senha inválidos.');
+    if (!user) throw new NotFoundError('Usuário ainda não sincronizado do SISBOM.');
+    if (!user.ativo) throw new ForbiddenError('Usuário inativo.');
+    return makeLoginResult(user);
   },
 
   async refresh(refresh_token: string, deps: AuthDeps): Promise<{ token: string }> {
@@ -65,14 +82,14 @@ export const authService = {
     try {
       payload = verifyRefresh(refresh_token);
     } catch {
-      throw new HttpError(401, 'Refresh token inválido.');
+      throw new UnauthorizedError('Refresh token inválido.');
     }
     const user = await deps.prisma.user.findUnique({ where: { id: payload.user_id } });
-    if (!user || !user.ativo) throw new HttpError(401, 'Usuário não encontrado ou inativo.');
+    if (!user || !user.ativo) throw new UnauthorizedError('Usuário não encontrado ou inativo.');
     return { token: signAccess({ user_id: user.id, cpf: user.cpf }) };
   },
 
   async me(userId: number, deps: AuthDeps): Promise<AuthUser> {
-    return buildAuthUser(deps.prisma, userId);
+    return buildAuthUser(deps.prisma, { id: userId });
   },
 };
