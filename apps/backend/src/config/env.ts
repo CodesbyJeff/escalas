@@ -10,8 +10,14 @@ const envSchema = z.object({
   DATABASE_URL_TEST: z.string().url().optional(),
   JWT_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
-  JWT_EXPIRES_IN: z.string().default('8h'),
-  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z
+    .string()
+    .regex(/^\d+[smhd]$/, 'Formato inválido (use 30s, 15m, 8h, 7d)')
+    .default('8h'),
+  JWT_REFRESH_EXPIRES_IN: z
+    .string()
+    .regex(/^\d+[smhd]$/, 'Formato inválido (use 30s, 15m, 8h, 7d)')
+    .default('7d'),
   SISBOM_AUTH_URL: z.string().url(),
   SISBOM_EXTERNAL_BASE_URL: z.string().url(),
   SISBOM_API_KEY: z.string().min(1),
