@@ -30,6 +30,45 @@ API em `http://localhost:3000/api/v1/`.
 - **GESTOR** — valida escalas da sua jurisdição (atribuído via admin)
 - **Super-admin** — flag `is_super_admin` no User, atribuída via seeder por matrícula
 
+## Exemplos de uso da API
+
+### Login (SISBOM AD)
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"cpf":"<CPF 11 dígitos>","senha":"<senha do AD>"}'
+```
+
+Resposta sucesso:
+
+```json
+{
+  "success": true,
+  "message": "Login realizado.",
+  "data": {
+    "token": "eyJ...",
+    "refresh_token": "eyJ...",
+    "user": { "id": 1, "cpf": "...", "nome": "...", "is_super_admin": false, "roles": [] }
+  }
+}
+```
+
+### Login (conta admin local)
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"cpf":"99999999900","senha":"<ADMIN_LOCAL_PASSWORD do .env>"}'
+```
+
+### Endpoint autenticado
+
+```bash
+curl http://localhost:3000/api/v1/auth/me \
+  -H "Authorization: Bearer <token retornado pelo login>"
+```
+
 ## Conta admin local
 
 Para administração operacional sem depender da senha pessoal de oficial via SISBOM AD, existe uma conta admin LOCAL:
