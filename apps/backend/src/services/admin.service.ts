@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { AtribuirRoleInput } from '@escalas/shared-schemas';
-import { HttpError } from './auth.service.js';
+import { HttpError } from '../utils/errors.js';
 
 export const adminService = {
   async atribuirRole(input: AtribuirRoleInput, createdBy: number, prisma: PrismaClient) {

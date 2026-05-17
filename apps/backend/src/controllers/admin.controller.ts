@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ok, fail } from '../utils/response.js';
 import { adminService } from '../services/admin.service.js';
-import { HttpError } from '../services/auth.service.js';
+import { HttpError } from '../utils/errors.js';
 import { syncService } from '../services/sync.service.js';
 import { prisma } from '../config/db.js';
 

@@ -4,12 +4,7 @@ import { signAccess, signRefresh, verifyRefresh } from '../config/jwt.js';
 import { sisbomClient } from '../integrations/sisbom/client.js';
 import type { AuthUser, Role } from '@escalas/shared-types';
 import type { LoginInput } from '@escalas/shared-schemas';
-
-export class HttpError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
-  }
-}
+import { HttpError } from '../utils/errors.js';
 
 export interface AuthDeps {
   prisma: PrismaClient;

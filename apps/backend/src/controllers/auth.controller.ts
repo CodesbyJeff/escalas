@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ok, fail } from '../utils/response.js';
-import { authService, HttpError } from '../services/auth.service.js';
+import { authService } from '../services/auth.service.js';
+import { HttpError } from '../utils/errors.js';
 import { prisma } from '../config/db.js';
 import { sisbomClient } from '../integrations/sisbom/client.js';
 
