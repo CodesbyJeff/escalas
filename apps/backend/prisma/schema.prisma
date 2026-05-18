@@ -85,6 +85,8 @@ model TemplateLotacao {
   lotacao    Lotacao             @relation(fields: [lotacao_id], references: [id])
   criado_por User                @relation(fields: [criado_por_id], references: [id])
   guarnicoes TemplateGuarnicao[]
+
+  @@index([criado_por_id])
 }
 
 model TemplateGuarnicao {
