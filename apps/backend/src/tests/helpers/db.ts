@@ -5,6 +5,7 @@ export const testPrisma = new PrismaClient({
 });
 
 export async function resetDb(): Promise<void> {
+  await testPrisma.templateLotacao.deleteMany(); // cascateia guarnicao/vaga
   await testPrisma.userRole.deleteMany();
   await testPrisma.userLotacao.deleteMany();
   await testPrisma.user.deleteMany();
