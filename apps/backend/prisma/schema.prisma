@@ -29,6 +29,7 @@ model User {
   last_sync_at    DateTime
   lotacoes        UserLotacao[]
   roles           UserRole[]
+  templates_criados TemplateLotacao[]
   created_at      DateTime      @default(now())
   updated_at      DateTime      @updatedAt
 }
@@ -45,6 +46,7 @@ model Lotacao {
   filhas          Lotacao[]     @relation("LotacaoHierarquia")
   user_lotacoes   UserLotacao[]
   user_roles      UserRole[]
+  template        TemplateLotacao?
 }
 
 model UserLotacao {
@@ -72,4 +74,41 @@ model SyncCursor {
   entidade            String   @id
   last_sync_at        DateTime
   last_mirror_ref_at  DateTime
+}
+
+model TemplateLotacao {
+  id            Int      @id @default(autoincrement())
+  lotacao_id    Int      @unique
+  criado_por_id Int
+  updated_at    DateTime @updatedAt
+
+  lotacao    Lotacao             @relation(fields: [lotacao_id], references: [id])
+  criado_por User                @relation(fields: [criado_por_id], references: [id])
+  guarnicoes TemplateGuarnicao[]
+}
+
+model TemplateGuarnicao {
+  id                   Int    @id @default(autoincrement())
+  template_lotacao_id  Int
+  sigla                String
+  atividade            String
+  turno_padrao_inicio  String
+  turno_padrao_fim     String
+  ordem                Int
+
+  template        TemplateLotacao        @relation(fields: [template_lotacao_id], references: [id], onDelete: Cascade)
+  vagas_sugeridas TemplateVagaSugerida[]
+
+  @@index([template_lotacao_id])
+}
+
+model TemplateVagaSugerida {
+  id                    Int    @id @default(autoincrement())
+  template_guarnicao_id Int
+  funcao                String
+  quantidade_sugerida   Int
+
+  guarnicao TemplateGuarnicao @relation(fields: [template_guarnicao_id], references: [id], onDelete: Cascade)
+
+  @@index([template_guarnicao_id])
 }
