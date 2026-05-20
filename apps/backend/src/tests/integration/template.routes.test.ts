@@ -37,6 +37,17 @@ describe('GET /api/v1/templates/lotacao/:lotacao_id', () => {
     expect(r.status).toBe(403);
   });
 
+  it('403 quando ESCALANTE de outra lotação tenta ler', async () => {
+    const { tokenEscalante } = await setupBase(704); // ESCALANTE da 704
+    const outraLot = await testPrisma.lotacao.create({
+      data: { id: 705, sigla: 'L705', nome: 'Lot', nivel: 3, operacional: true },
+    });
+    const r = await request(buildApp())
+      .get(`/api/v1/templates/lotacao/${outraLot.id}`)
+      .set('authorization', `Bearer ${tokenEscalante}`);
+    expect(r.status).toBe(403);
+  });
+
   it('404 quando template não configurado', async () => {
     const { lot, tokenEscalante } = await setupBase(702);
     const r = await request(buildApp())
@@ -152,5 +163,27 @@ describe('PUT /api/v1/templates/lotacao/:lotacao_id', () => {
       .set('authorization', `Bearer ${token}`)
       .send(payloadValido);
     expect(r.status).toBe(404);
+  });
+
+  it('200 super-admin escreve e lê template em lotação sem ter role nela', async () => {
+    const lot = await testPrisma.lotacao.create({
+      data: { id: 714, sigla: 'L714', nome: 'Lot', nivel: 3, operacional: true },
+    });
+    const admin = await testPrisma.user.create({
+      data: { cpf: '66655544433', nome: 'Super', is_super_admin: true, last_sync_at: new Date() },
+    });
+    const token = signAccess({ user_id: admin.id, cpf: admin.cpf });
+
+    const put = await request(buildApp())
+      .put(`/api/v1/templates/lotacao/${lot.id}`)
+      .set('authorization', `Bearer ${token}`)
+      .send(payloadValido);
+    expect(put.status).toBe(200);
+
+    const get = await request(buildApp())
+      .get(`/api/v1/templates/lotacao/${lot.id}`)
+      .set('authorization', `Bearer ${token}`);
+    expect(get.status).toBe(200);
+    expect(get.body.data.guarnicoes).toHaveLength(1);
   });
 });
