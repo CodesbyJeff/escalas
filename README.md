@@ -69,6 +69,33 @@ curl http://localhost:3000/api/v1/auth/me \
   -H "Authorization: Bearer <token retornado pelo login>"
 ```
 
+### Templates de lotação
+
+Configuração padrão das guarnições de uma lotação. `GET` exige role `ESCALANTE`
+ou `GESTOR` na lotação (super-admin passa direto); `PUT` exige `ESCALANTE` na
+lotação. `PUT` é replace-all (substitui todas as guarnições).
+
+```bash
+# Ler o template (404 se ainda não configurado)
+curl http://localhost:3000/api/v1/templates/lotacao/100 \
+  -H "Authorization: Bearer <token>"
+
+# Criar/substituir o template da lotação
+curl -X PUT http://localhost:3000/api/v1/templates/lotacao/100 \
+  -H "Authorization: Bearer <token>" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "guarnicoes": [{
+      "sigla": "ABT-01",
+      "atividade": "incendio",
+      "turno_padrao_inicio": "07:00",
+      "turno_padrao_fim": "19:00",
+      "ordem": 0,
+      "vagas_sugeridas": [{ "funcao": "comandante", "quantidade_sugerida": 1 }]
+    }]
+  }'
+```
+
 ## Conta admin local
 
 Para administração operacional sem depender da senha pessoal de oficial via SISBOM AD, existe uma conta admin LOCAL:
