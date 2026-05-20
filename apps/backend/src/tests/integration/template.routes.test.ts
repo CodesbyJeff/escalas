@@ -68,3 +68,89 @@ describe('GET /api/v1/templates/lotacao/:lotacao_id', () => {
     expect(r.body.data.guarnicoes).toHaveLength(1);
   });
 });
+
+const payloadValido: UpsertTemplateLotacaoInput = {
+  guarnicoes: [{
+    sigla: 'ABT-01', atividade: 'incendio',
+    turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0,
+    vagas_sugeridas: [{ funcao: 'comandante', quantidade_sugerida: 1 }],
+  }],
+};
+
+describe('PUT /api/v1/templates/lotacao/:lotacao_id', () => {
+  it('422 com payload inválido (turno mal-formatado)', async () => {
+    const { lot, tokenEscalante } = await setupBase(710);
+    const r = await request(buildApp())
+      .put(`/api/v1/templates/lotacao/${lot.id}`)
+      .set('authorization', `Bearer ${tokenEscalante}`)
+      .send({
+        guarnicoes: [{
+          sigla: 'X', atividade: 'y',
+          turno_padrao_inicio: '7am', turno_padrao_fim: '19:00', ordem: 0,
+          vagas_sugeridas: [{ funcao: 'f', quantidade_sugerida: 1 }],
+        }],
+      });
+    expect(r.status).toBe(422);
+  });
+
+  it('403 quando GESTOR tenta escrever', async () => {
+    const { lot } = await setupBase(711);
+    const gestor = await testPrisma.user.create({
+      data: { cpf: '88800077766', nome: 'Gestor', last_sync_at: new Date() },
+    });
+    await testPrisma.userRole.create({
+      data: { user_id: gestor.id, role: 'GESTOR', lotacao_id: lot.id, created_by: gestor.id },
+    });
+    const token = signAccess({ user_id: gestor.id, cpf: gestor.cpf });
+    const r = await request(buildApp())
+      .put(`/api/v1/templates/lotacao/${lot.id}`)
+      .set('authorization', `Bearer ${token}`)
+      .send(payloadValido);
+    expect(r.status).toBe(403);
+  });
+
+  it('200 cria template novo', async () => {
+    const { lot, tokenEscalante } = await setupBase(712);
+    const r = await request(buildApp())
+      .put(`/api/v1/templates/lotacao/${lot.id}`)
+      .set('authorization', `Bearer ${tokenEscalante}`)
+      .send(payloadValido);
+    expect(r.status).toBe(200);
+    expect(r.body.data.guarnicoes).toHaveLength(1);
+  });
+
+  it('200 substitui template existente (replace-all)', async () => {
+    const { lot, tokenEscalante } = await setupBase(713);
+    await request(buildApp())
+      .put(`/api/v1/templates/lotacao/${lot.id}`)
+      .set('authorization', `Bearer ${tokenEscalante}`)
+      .send(payloadValido);
+
+    const novo: UpsertTemplateLotacaoInput = {
+      guarnicoes: [{
+        sigla: 'AR-01', atividade: 'resgate',
+        turno_padrao_inicio: '08:00', turno_padrao_fim: '20:00', ordem: 0,
+        vagas_sugeridas: [{ funcao: 'socorrista', quantidade_sugerida: 2 }],
+      }],
+    };
+    const r = await request(buildApp())
+      .put(`/api/v1/templates/lotacao/${lot.id}`)
+      .set('authorization', `Bearer ${tokenEscalante}`)
+      .send(novo);
+    expect(r.status).toBe(200);
+    expect(r.body.data.guarnicoes).toHaveLength(1);
+    expect(r.body.data.guarnicoes[0].sigla).toBe('AR-01');
+  });
+
+  it('404 quando lotação não existe (super-admin passa pelo requireRole, mas service 404)', async () => {
+    const admin = await testPrisma.user.create({
+      data: { cpf: '77766655544', nome: 'A', is_super_admin: true, last_sync_at: new Date() },
+    });
+    const token = signAccess({ user_id: admin.id, cpf: admin.cpf });
+    const r = await request(buildApp())
+      .put(`/api/v1/templates/lotacao/99999`)
+      .set('authorization', `Bearer ${token}`)
+      .send(payloadValido);
+    expect(r.status).toBe(404);
+  });
+});
