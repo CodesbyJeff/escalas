@@ -86,3 +86,37 @@ describe('GET escopo + mes + PUT dia', () => {
     expect(conflR.body.data.conflitos).toBeDefined();
   });
 });
+
+describe('publicar / versões / deletar', () => {
+  async function comEscala(lotId: number) {
+    const lot = await testPrisma.lotacao.create({ data: { id: lotId, sigla: `L${lotId}`, nome: 'L', nivel: 3, operacional: true } });
+    const esc = await testPrisma.user.create({ data: { cpf: `100${lotId}`, nome: 'E', last_sync_at: new Date() } });
+    await testPrisma.userRole.create({ data: { user_id: esc.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: esc.id } });
+    await testPrisma.templateLotacao.create({ data: { lotacao_id: lot.id, criado_por_id: esc.id, guarnicoes: { create: [{ sigla: 'A', atividade: 'i', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'c', quantidade_sugerida: 1 }] } }] } } });
+    const token = signAccess({ user_id: esc.id, cpf: esc.cpf });
+    const r = await request(buildApp()).post('/api/v1/escalas').set('authorization', `Bearer ${token}`).send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+    return { token, escalaId: r.body.data.id as number };
+  }
+
+  it('publicar cria versão e GET /versoes lista', async () => {
+    const { token, escalaId } = await comEscala(880);
+    const pub = await request(buildApp()).post(`/api/v1/escalas/${escalaId}/publicar`).set('authorization', `Bearer ${token}`);
+    expect(pub.status).toBe(201);
+    expect(pub.body.data.versao).toBe(1);
+
+    const lista = await request(buildApp()).get(`/api/v1/escalas/${escalaId}/versoes`).set('authorization', `Bearer ${token}`);
+    expect(lista.status).toBe(200);
+    expect(lista.body.data).toHaveLength(1);
+  });
+
+  it('409 ao deletar escala publicada; 200 em rascunho', async () => {
+    const { token, escalaId } = await comEscala(881);
+    await request(buildApp()).post(`/api/v1/escalas/${escalaId}/publicar`).set('authorization', `Bearer ${token}`);
+    const del = await request(buildApp()).delete(`/api/v1/escalas/${escalaId}`).set('authorization', `Bearer ${token}`);
+    expect(del.status).toBe(409);
+
+    const { token: t2, escalaId: id2 } = await comEscala(882);
+    const del2 = await request(buildApp()).delete(`/api/v1/escalas/${id2}`).set('authorization', `Bearer ${t2}`);
+    expect(del2.status).toBe(200);
+  });
+});
