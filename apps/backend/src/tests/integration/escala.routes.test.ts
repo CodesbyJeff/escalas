@@ -1,0 +1,88 @@
+import { describe, it, expect } from 'vitest';
+import request from 'supertest';
+import { buildApp } from '../../app.js';
+import { testPrisma } from '../helpers/db.js';
+import { signAccess } from '../../config/jwt.js';
+
+async function setup(lotId: number) {
+  const lot = await testPrisma.lotacao.create({
+    data: { id: lotId, sigla: `L${lotId}`, nome: 'Lot', nivel: 3, operacional: true },
+  });
+  const esc = await testPrisma.user.create({ data: { cpf: `100${lotId}`, nome: 'Esc', last_sync_at: new Date() } });
+  await testPrisma.userRole.create({ data: { user_id: esc.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: esc.id } });
+  await testPrisma.templateLotacao.create({
+    data: { lotacao_id: lot.id, criado_por_id: esc.id, guarnicoes: { create: [{ sigla: 'ABT-01', atividade: 'incendio', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'comandante', quantidade_sugerida: 1 }] } }] } },
+  });
+  const token = signAccess({ user_id: esc.id, cpf: esc.cpf });
+  return { lot, esc, token };
+}
+
+describe('POST /api/v1/escalas', () => {
+  it('403 sem role de escalante na lotação', async () => {
+    const { lot } = await setup(870);
+    const outro = await testPrisma.user.create({ data: { cpf: '20202029999', nome: 'X', last_sync_at: new Date() } });
+    const r = await request(buildApp()).post('/api/v1/escalas')
+      .set('authorization', `Bearer ${signAccess({ user_id: outro.id, cpf: outro.cpf })}`)
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+    expect(r.status).toBe(403);
+  });
+
+  it('201 cria escala e gera dias', async () => {
+    const { lot, token } = await setup(871);
+    const r = await request(buildApp()).post('/api/v1/escalas')
+      .set('authorization', `Bearer ${token}`)
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+    expect(r.status).toBe(201);
+    expect(r.body.data.status).toBe('rascunho');
+  });
+
+  it('409 sem template', async () => {
+    const lot = await testPrisma.lotacao.create({ data: { id: 872, sigla: 'L872', nome: 'L', nivel: 3, operacional: true } });
+    const esc = await testPrisma.user.create({ data: { cpf: '100872', nome: 'E', last_sync_at: new Date() } });
+    await testPrisma.userRole.create({ data: { user_id: esc.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: esc.id } });
+    const r = await request(buildApp()).post('/api/v1/escalas')
+      .set('authorization', `Bearer ${signAccess({ user_id: esc.id, cpf: esc.cpf })}`)
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+    expect(r.status).toBe(409);
+  });
+});
+
+describe('GET escopo + mes + PUT dia', () => {
+  async function comEscala(lotId: number) {
+    const s = await setup(lotId);
+    const r = await request(buildApp()).post('/api/v1/escalas').set('authorization', `Bearer ${s.token}`).send({ lotacao_id: s.lot.id, mes: 4, ano: 2026 });
+    return { ...s, escalaId: r.body.data.id as number };
+  }
+
+  it('listar só retorna escalas das lotações do escalante', async () => {
+    const a = await comEscala(875); // escalante A, lotação 875
+    await comEscala(876);            // escalante B, lotação 876 (outro dono)
+    const r = await request(buildApp()).get('/api/v1/escalas').set('authorization', `Bearer ${a.token}`);
+    expect(r.status).toBe(200);
+    expect(r.body.data).toHaveLength(1);
+    expect(r.body.data[0].lotacao_id).toBe(a.lot.id);
+  });
+
+  it('GET /:id/mes resume os dias', async () => {
+    const { token, escalaId } = await comEscala(873);
+    const r = await request(buildApp()).get(`/api/v1/escalas/${escalaId}/mes`).set('authorization', `Bearer ${token}`);
+    expect(r.status).toBe(200);
+    expect(r.body.data.dias).toHaveLength(30);
+  });
+
+  it('PUT dia salva e 422 em conflito', async () => {
+    const { token, escalaId } = await comEscala(874);
+    const militar = await testPrisma.user.create({ data: { cpf: '20202028888', nome: 'M', last_sync_at: new Date() } });
+    const okR = await request(buildApp()).put(`/api/v1/escalas/${escalaId}/dias/2026-04-01`).set('authorization', `Bearer ${token}`)
+      .send({ guarnicoes: [{ sigla: 'ABT-01', atividade: 'incendio', viatura_id: null, turno_inicio: '07:00', turno_fim: '19:00', ordem: 0, vagas: [{ funcao: 'comandante', militar_id: militar.id, turno_inicio: '07:00', turno_fim: '19:00' }] }] });
+    expect(okR.status).toBe(200);
+
+    const conflR = await request(buildApp()).put(`/api/v1/escalas/${escalaId}/dias/2026-04-02`).set('authorization', `Bearer ${token}`)
+      .send({ guarnicoes: [{ sigla: 'ABT-01', atividade: 'incendio', viatura_id: null, turno_inicio: '07:00', turno_fim: '19:00', ordem: 0, vagas: [
+        { funcao: 'comandante', militar_id: militar.id, turno_inicio: '07:00', turno_fim: '19:00' },
+        { funcao: 'motorista', militar_id: militar.id, turno_inicio: '12:00', turno_fim: '15:00' },
+      ] }] });
+    expect(conflR.status).toBe(422);
+    expect(conflR.body.data.conflitos).toBeDefined();
+  });
+});
