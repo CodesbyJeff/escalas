@@ -1,5 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { turnosSobrepoem, encontrarConflitos } from '../../utils/turnos.js';
+import { parseHHmm, turnosSobrepoem, encontrarConflitos } from '../../utils/turnos.js';
+
+describe('parseHHmm', () => {
+  it('converte HH:mm válido em minutos', () => {
+    expect(parseHHmm('07:30')).toBe(450);
+    expect(parseHHmm('00:00')).toBe(0);
+    expect(parseHHmm('23:59')).toBe(1439);
+  });
+
+  it('lança em formato inválido', () => {
+    expect(() => parseHHmm('7am')).toThrow();
+    expect(() => parseHHmm('25:00')).toThrow();
+    expect(() => parseHHmm('12:60')).toThrow();
+    expect(() => parseHHmm('')).toThrow();
+  });
+});
 
 describe('turnosSobrepoem', () => {
   it('detecta sobreposição parcial diurna', () => {
