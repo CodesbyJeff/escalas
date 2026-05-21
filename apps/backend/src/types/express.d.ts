@@ -6,6 +6,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: { id: number; cpf: string; is_super_admin: boolean };
+      escala?: { id: number; lotacao_id: number; status: string };
     }
   }
 }

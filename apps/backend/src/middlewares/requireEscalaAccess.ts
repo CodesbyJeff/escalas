@@ -2,15 +2,6 @@ import type { RequestHandler } from 'express';
 import { prisma } from '../config/db.js';
 import { fail } from '../utils/response.js';
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      escala?: { id: number; lotacao_id: number; status: string };
-    }
-  }
-}
-
 export const requireEscalaAccess: RequestHandler = async (req, res, next) => {
   if (!req.user) return fail(res, 'Não autenticado.', 401);
   const id = Number(req.params.id);
