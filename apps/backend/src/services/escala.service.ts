@@ -307,4 +307,19 @@ export const escalaService = {
       where: { escala_id_versao: { escala_id, versao } },
     });
   },
+
+  async deletar(escala_id: number, user_id: number, prisma: PrismaClient): Promise<void> {
+    const escala = await prisma.escala.findUnique({ where: { id: escala_id } });
+    if (!escala) throw new NotFoundError('Escala não encontrada.');
+    if (escala.status !== 'rascunho') {
+      throw new ConflictError('Só é possível excluir escala em rascunho.');
+    }
+    await prisma.$transaction(async (tx) => {
+      await auditService.log(
+        { user_id, acao: 'deletar', entidade: 'Escala', entidade_id: escala_id, antes: { mes: escala.mes, ano: escala.ano }, depois: null },
+        tx,
+      );
+      await tx.escala.delete({ where: { id: escala_id } });
+    });
+  },
 };

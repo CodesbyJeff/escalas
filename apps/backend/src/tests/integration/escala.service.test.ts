@@ -252,3 +252,25 @@ describe('escalaService.publicar / versões', () => {
     expect(v1!.versao).toBe(1);
   });
 });
+
+describe('escalaService.deletar', () => {
+  it('deleta escala em rascunho', async () => {
+    const lot = await seedLotacao(850);
+    const user = await seedUser('55655655655');
+    await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    await escalaService.deletar(escala.id, user.id, testPrisma);
+    expect(await testPrisma.escala.findUnique({ where: { id: escala.id } })).toBeNull();
+  });
+
+  it('409 ao deletar escala já publicada', async () => {
+    const lot = await seedLotacao(851);
+    const user = await seedUser('66766766766');
+    await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    await escalaService.publicar(escala.id, user.id, testPrisma);
+    await expect(
+      escalaService.deletar(escala.id, user.id, testPrisma),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+});
