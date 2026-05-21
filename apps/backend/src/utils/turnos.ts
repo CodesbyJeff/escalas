@@ -1,5 +1,7 @@
 export function parseHHmm(s: string): number {
-  const [h, m] = s.split(':').map(Number);
+  const parts = s.split(':');
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
   if (!Number.isInteger(h) || !Number.isInteger(m) || h < 0 || h > 23 || m < 0 || m > 59) {
     throw new Error(`Formato HH:mm inválido: "${s}"`);
   }
