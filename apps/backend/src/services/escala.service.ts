@@ -1,7 +1,8 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
-import type { CriarEscalaInput } from '@escalas/shared-schemas';
-import { ConflictError } from '../utils/errors.js';
+import type { CriarEscalaInput, PutDiaInput } from '@escalas/shared-schemas';
+import { ConflictError, NotFoundError, HttpError } from '../utils/errors.js';
 import { diasDoMes } from '../utils/calendario.js';
+import { encontrarConflitos } from '../utils/turnos.js';
 import { auditService } from './audit.service.js';
 
 export const escalaService = {
@@ -124,5 +125,82 @@ export const escalaService = {
         };
       }),
     };
+  },
+
+  async getDia(escala_id: number, dataStr: string, prisma: PrismaClient) {
+    return prisma.escalaDia.findFirst({
+      where: { escala_id, data: new Date(`${dataStr}T00:00:00.000Z`) },
+      include: { guarnicoes: { orderBy: { ordem: 'asc' }, include: { vagas: { orderBy: { id: 'asc' } } } } },
+    });
+  },
+
+  async putDia(
+    escala_id: number,
+    dataStr: string,
+    input: PutDiaInput,
+    user_id: number,
+    prisma: PrismaClient,
+  ) {
+    const data = new Date(`${dataStr}T00:00:00.000Z`);
+    const dia = await prisma.escalaDia.findFirst({
+      where: { escala_id, data },
+      include: { guarnicoes: { include: { vagas: true } } },
+    });
+    if (!dia) throw new NotFoundError('Dia não encontrado nesta escala.');
+
+    const todasVagas = input.guarnicoes.flatMap((g, gi) =>
+      g.vagas.map((v, vi) => ({
+        id: gi * 1000 + vi,
+        militar_id: v.militar_id,
+        turno_inicio: v.turno_inicio,
+        turno_fim: v.turno_fim,
+      })),
+    );
+    const conflitos = encontrarConflitos(todasVagas);
+    if (conflitos.length > 0) {
+      const err = new HttpError(422, 'Militar em vagas com turnos sobrepostos no mesmo dia.');
+      (err as unknown as { conflitos: unknown }).conflitos = conflitos;
+      throw err;
+    }
+
+    const antes = { guarnicoes: dia.guarnicoes };
+
+    return prisma.$transaction(async (tx) => {
+      await tx.escalaGuarnicao.deleteMany({ where: { escala_dia_id: dia.id } });
+      await tx.escalaDia.update({
+        where: { id: dia.id },
+        data: {
+          observacoes: input.observacoes ?? null,
+          guarnicoes: {
+            create: input.guarnicoes.map((g) => ({
+              sigla: g.sigla,
+              atividade: g.atividade,
+              viatura_id: g.viatura_id ?? null,
+              turno_inicio: g.turno_inicio,
+              turno_fim: g.turno_fim,
+              ordem: g.ordem,
+              vagas: {
+                create: g.vagas.map((v) => ({
+                  funcao: v.funcao,
+                  militar_id: v.militar_id,
+                  turno_inicio: v.turno_inicio,
+                  turno_fim: v.turno_fim,
+                  observacoes: v.observacoes ?? null,
+                })),
+              },
+            })),
+          },
+        },
+      });
+      const novo = await tx.escalaDia.findUniqueOrThrow({
+        where: { id: dia.id },
+        include: { guarnicoes: { orderBy: { ordem: 'asc' }, include: { vagas: { orderBy: { id: 'asc' } } } } },
+      });
+      await auditService.log(
+        { user_id, acao: 'editar', entidade: 'EscalaDia', entidade_id: dia.id, antes: antes as never, depois: { guarnicoes: novo.guarnicoes } as never },
+        tx,
+      );
+      return novo;
+    });
   },
 };

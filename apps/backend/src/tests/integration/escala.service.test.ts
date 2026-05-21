@@ -116,3 +116,65 @@ describe('escalaService.listar / getDetalhe / getMes', () => {
     expect(mes!.dias[0]).toMatchObject({ vagas_total: 3, vagas_preenchidas: 0 });
   });
 });
+
+import type { PutDiaInput } from '@escalas/shared-schemas';
+
+describe('escalaService.putDia', () => {
+  async function escalaComDia(lotId: number, cpf: string) {
+    const lot = await seedLotacao(lotId);
+    const user = await seedUser(cpf);
+    await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const militar = await seedUser(`9${cpf}`.slice(0, 11));
+    return { lot, user, escala, militar, data: '2026-04-01' };
+  }
+
+  const guarnicaoBase = (militar_id: number | null) => ({
+    sigla: 'ABT-01', atividade: 'incendio', viatura_id: null,
+    turno_inicio: '07:00', turno_fim: '19:00', ordem: 0,
+    vagas: [{ funcao: 'comandante', militar_id, turno_inicio: '07:00', turno_fim: '19:00' }],
+  });
+
+  it('substitui guarnições do dia e atribui militar', async () => {
+    const { escala, militar, data } = await escalaComDia(820, '12312312312');
+    const input: PutDiaInput = { observacoes: 'teste', guarnicoes: [guarnicaoBase(militar.id)] };
+    const dia = await escalaService.putDia(escala.id, data, input, escala.criado_por_id, testPrisma);
+    expect(dia.guarnicoes).toHaveLength(1);
+    expect(dia.guarnicoes[0]!.vagas[0]!.militar_id).toBe(militar.id);
+    expect(dia.observacoes).toBe('teste');
+  });
+
+  it('barra (422) militar em duas vagas sobrepostas', async () => {
+    const { escala, militar, data } = await escalaComDia(821, '32132132132');
+    const input: PutDiaInput = {
+      guarnicoes: [{
+        sigla: 'ABT-01', atividade: 'incendio', viatura_id: null,
+        turno_inicio: '07:00', turno_fim: '19:00', ordem: 0,
+        vagas: [
+          { funcao: 'comandante', militar_id: militar.id, turno_inicio: '07:00', turno_fim: '19:00' },
+          { funcao: 'motorista', militar_id: militar.id, turno_inicio: '12:00', turno_fim: '15:00' },
+        ],
+      }],
+    };
+    await expect(
+      escalaService.putDia(escala.id, data, input, escala.criado_por_id, testPrisma),
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
+  it('404 se o dia não pertence à escala', async () => {
+    const { escala } = await escalaComDia(822, '45645645645');
+    const input: PutDiaInput = { guarnicoes: [guarnicaoBase(null)] };
+    await expect(
+      escalaService.putDia(escala.id, '2026-05-01', input, escala.criado_por_id, testPrisma),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('registra AuditLog de edição com antes/depois', async () => {
+    const { escala, data } = await escalaComDia(823, '65465465465');
+    const input: PutDiaInput = { guarnicoes: [guarnicaoBase(null)] };
+    await escalaService.putDia(escala.id, data, input, escala.criado_por_id, testPrisma);
+    const logs = await testPrisma.auditLog.findMany({ where: { entidade: 'EscalaDia', acao: 'editar' } });
+    expect(logs.length).toBeGreaterThanOrEqual(1);
+    expect(logs[0]!.payload_depois).not.toBeNull();
+  });
+});
