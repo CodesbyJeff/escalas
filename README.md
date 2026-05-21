@@ -96,6 +96,60 @@ curl -X PUT http://localhost:3000/api/v1/templates/lotacao/100 \
   }'
 ```
 
+### Escalas (lado escalante)
+
+Escala mensal da lotação. `POST` exige role `ESCALANTE` na lotação; as rotas
+`/:id/*` exigem `ESCALANTE` na lotação da escala (super-admin passa direto).
+`GET /escalas` lista apenas as escalas das lotações onde o usuário é `ESCALANTE`.
+Criar gera os dias do mês a partir do template (bloqueia com 409 se não houver
+template). Publicar congela uma versão imutável (snapshot) e move para
+`em_validacao`. Editar dia valida conflito de turno (422 se o mesmo militar
+ficar em vagas sobrepostas no dia).
+
+```bash
+# Criar escala mensal (201) — gera dias × template
+curl -X POST http://localhost:3000/api/v1/escalas \
+  -H "Authorization: Bearer <token>" \
+  -H 'Content-Type: application/json' \
+  -d '{ "lotacao_id": 100, "mes": 6, "ano": 2026 }'
+
+# Visão mensal (status por dia)
+curl http://localhost:3000/api/v1/escalas/<id>/mes \
+  -H "Authorization: Bearer <token>"
+
+# Editar um dia (replace-all das guarnições/vagas; valida conflito)
+curl -X PUT http://localhost:3000/api/v1/escalas/<id>/dias/2026-06-01 \
+  -H "Authorization: Bearer <token>" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "guarnicoes": [{
+      "sigla": "ABT-01", "atividade": "incendio", "viatura_id": null,
+      "turno_inicio": "07:00", "turno_fim": "19:00", "ordem": 0,
+      "vagas": [{ "funcao": "comandante", "militar_id": 123, "turno_inicio": "07:00", "turno_fim": "19:00" }]
+    }]
+  }'
+
+# Duplicar um dia para outro
+curl -X POST http://localhost:3000/api/v1/escalas/<id>/dias/2026-06-02/duplicar \
+  -H "Authorization: Bearer <token>" \
+  -H 'Content-Type: application/json' \
+  -d '{ "de": "2026-06-01" }'
+
+# Publicar (201) — cria versão imutável + em_validacao
+curl -X POST http://localhost:3000/api/v1/escalas/<id>/publicar \
+  -H "Authorization: Bearer <token>"
+
+# Listar versões publicadas / obter o conteúdo de uma versão
+curl http://localhost:3000/api/v1/escalas/<id>/versoes \
+  -H "Authorization: Bearer <token>"
+curl http://localhost:3000/api/v1/escalas/<id>/versoes/1 \
+  -H "Authorization: Bearer <token>"
+
+# Excluir (só rascunho; 409 se já publicada)
+curl -X DELETE http://localhost:3000/api/v1/escalas/<id> \
+  -H "Authorization: Bearer <token>"
+```
+
 ## Conta admin local
 
 Para administração operacional sem depender da senha pessoal de oficial via SISBOM AD, existe uma conta admin LOCAL:
