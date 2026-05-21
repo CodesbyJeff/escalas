@@ -24,7 +24,24 @@ export const escalaController = {
       const mes = req.query.mes ? Number(req.query.mes) : undefined;
       const ano = req.query.ano ? Number(req.query.ano) : undefined;
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const lista = await escalaService.listar({ lotacao_id, mes, ano, status }, prisma);
+
+      // Escopo por lotação: não-super-admin só vê escalas das lotações onde é ESCALANTE.
+      let lotacao_ids: number[] | undefined;
+      if (!req.user!.is_super_admin) {
+        const roles = await prisma.userRole.findMany({
+          where: { user_id: req.user!.id, role: 'ESCALANTE' },
+          select: { lotacao_id: true },
+        });
+        const permitidas = roles.map((r) => r.lotacao_id).filter((x): x is number => x != null);
+        // Se filtrou por uma lotação específica, só permite se estiver no conjunto autorizado.
+        lotacao_ids =
+          lotacao_id !== undefined ? (permitidas.includes(lotacao_id) ? [lotacao_id] : []) : permitidas;
+      }
+
+      const lista = await escalaService.listar(
+        { ...(lotacao_ids ? { lotacao_ids } : { lotacao_id }), mes, ano, status },
+        prisma,
+      );
       ok(res, 'Escalas listadas.', lista);
     } catch (e) { next(e); }
   },

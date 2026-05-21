@@ -73,12 +73,17 @@ export const escalaService = {
   },
 
   async listar(
-    filtro: { lotacao_id?: number; mes?: number; ano?: number; status?: string },
+    filtro: { lotacao_id?: number; lotacao_ids?: number[]; mes?: number; ano?: number; status?: string },
     prisma: PrismaClient,
   ) {
     return prisma.escala.findMany({
       where: {
-        ...(filtro.lotacao_id && { lotacao_id: filtro.lotacao_id }),
+        // lotacao_ids restringe ao conjunto permitido (escopo por papel); precede lotacao_id
+        ...(filtro.lotacao_ids
+          ? { lotacao_id: { in: filtro.lotacao_ids } }
+          : filtro.lotacao_id
+            ? { lotacao_id: filtro.lotacao_id }
+            : {}),
         ...(filtro.mes && { mes: filtro.mes }),
         ...(filtro.ano && { ano: filtro.ano }),
         ...(filtro.status && { status: filtro.status as never }),
