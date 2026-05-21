@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import type { CriarEscalaInput } from '@escalas/shared-schemas';
 import { ConflictError } from '../utils/errors.js';
 import { diasDoMes } from '../utils/calendario.js';
@@ -23,7 +23,8 @@ export const escalaService = {
 
     const dias = diasDoMes(input.mes, input.ano);
 
-    const escala = await prisma.$transaction(async (tx) => {
+    try {
+      return await prisma.$transaction(async (tx) => {
       const nova = await tx.escala.create({
         data: {
           lotacao_id: input.lotacao_id,
@@ -60,8 +61,13 @@ export const escalaService = {
         tx,
       );
       return nova;
-    });
-
-    return escala;
+      });
+    } catch (e) {
+      // P2002 = corrida na criação concorrente da mesma (lotacao, mes, ano)
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictError('Já existe escala para essa lotação neste mês/ano.');
+      }
+      throw e;
+    }
   },
 };
