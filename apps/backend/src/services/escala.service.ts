@@ -203,4 +203,35 @@ export const escalaService = {
       return novo;
     });
   },
+
+  async duplicarDia(
+    escala_id: number,
+    dataDestinoStr: string,
+    dataOrigemStr: string,
+    user_id: number,
+    prisma: PrismaClient,
+  ) {
+    const origem = await this.getDia(escala_id, dataOrigemStr, prisma);
+    if (!origem) throw new NotFoundError('Dia de origem não encontrado.');
+
+    const input = {
+      observacoes: origem.observacoes,
+      guarnicoes: origem.guarnicoes.map((g) => ({
+        sigla: g.sigla,
+        atividade: g.atividade,
+        viatura_id: g.viatura_id,
+        turno_inicio: g.turno_inicio,
+        turno_fim: g.turno_fim,
+        ordem: g.ordem,
+        vagas: g.vagas.map((v) => ({
+          funcao: v.funcao,
+          militar_id: v.militar_id,
+          turno_inicio: v.turno_inicio,
+          turno_fim: v.turno_fim,
+          observacoes: v.observacoes ?? undefined,
+        })),
+      })),
+    };
+    return this.putDia(escala_id, dataDestinoStr, input, user_id, prisma);
+  },
 };

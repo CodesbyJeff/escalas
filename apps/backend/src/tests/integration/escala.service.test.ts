@@ -178,3 +178,35 @@ describe('escalaService.putDia', () => {
     expect(logs[0]!.payload_depois).not.toBeNull();
   });
 });
+
+describe('escalaService.duplicarDia', () => {
+  it('copia guarnições/vagas de um dia para outro', async () => {
+    const lot = await seedLotacao(830);
+    const user = await seedUser('70707070707');
+    await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const militar = await seedUser('80808080808');
+
+    await escalaService.putDia(escala.id, '2026-04-01', {
+      guarnicoes: [{
+        sigla: 'ABT-01', atividade: 'incendio', viatura_id: null,
+        turno_inicio: '07:00', turno_fim: '19:00', ordem: 0,
+        vagas: [{ funcao: 'comandante', militar_id: militar.id, turno_inicio: '07:00', turno_fim: '19:00' }],
+      }],
+    }, user.id, testPrisma);
+
+    const dia02 = await escalaService.duplicarDia(escala.id, '2026-04-02', '2026-04-01', user.id, testPrisma);
+    expect(dia02.guarnicoes).toHaveLength(1);
+    expect(dia02.guarnicoes[0]!.vagas[0]!.militar_id).toBe(militar.id);
+  });
+
+  it('404 se o dia de origem não existe', async () => {
+    const lot = await seedLotacao(831);
+    const user = await seedUser('90909090909');
+    await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    await expect(
+      escalaService.duplicarDia(escala.id, '2026-04-02', '2026-05-01', user.id, testPrisma),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+});
