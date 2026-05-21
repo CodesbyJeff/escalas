@@ -5,7 +5,10 @@ export const testPrisma = new PrismaClient({
 });
 
 export async function resetDb(): Promise<void> {
-  await testPrisma.templateLotacao.deleteMany(); // cascateia guarnicao/vaga
+  await testPrisma.auditLog.deleteMany();
+  await testPrisma.escalaVersao.deleteMany();
+  await testPrisma.escala.deleteMany(); // cascateia dia/guarnicao/vaga
+  await testPrisma.templateLotacao.deleteMany(); // cascateia guarnicao/vaga template
   await testPrisma.userRole.deleteMany();
   await testPrisma.userLotacao.deleteMany();
   await testPrisma.user.deleteMany();
