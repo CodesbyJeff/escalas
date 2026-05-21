@@ -3,9 +3,8 @@ import { syncService } from '../services/sync.service.js';
 import { logger } from '../utils/logger.js';
 
 async function main(): Promise<void> {
-  await prisma.syncCursor.deleteMany();
   logger.info('bulk_sync_started');
-  await syncService.runOnce(prisma);
+  await syncService.bulkSnapshot(prisma);
   logger.info('bulk_sync_done');
 }
 

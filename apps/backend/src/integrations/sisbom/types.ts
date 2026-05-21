@@ -1,21 +1,34 @@
+// Contrato real dos endpoints /external do SISBOM (api_sisbom/routes/external.js).
+
 export interface MirrorRefResponse {
-  users: string;
-  lotacoes: string;
-  [k: string]: string;
+  ref: Record<string, string | null>;
+  server_time: string;
 }
 
-export type EventType = 'new' | 'upd' | 'del';
+export type SyncEventOp = 'create' | 'patch' | 'upsert' | 'delete' | 'remove';
 
 export interface SyncEvent {
+  id: string;
+  op: SyncEventOp;
   entity: string;
-  type: EventType;
-  data: Record<string, unknown>;
-  timestamp: string;
+  entity_id: string | null;
+  at: string;
+  data: Record<string, unknown> | null;
 }
 
 export interface EventsResponse {
   events: SyncEvent[];
-  next_cursor: string | null;
+  next_since: string;
+  has_more: boolean;
+  retention_days: number;
+  is_stale: boolean;
+}
+
+export interface SnapshotResponse {
+  entity: string;
+  items: Record<string, unknown>[];
+  skip: number;
+  limit: number;
   has_more: boolean;
 }
 

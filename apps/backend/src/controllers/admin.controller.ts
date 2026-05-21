@@ -50,8 +50,7 @@ export const adminController = {
 
   async bulkSync(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await prisma.syncCursor.deleteMany();
-      await syncService.runOnce(prisma);
+      await syncService.bulkSnapshot(prisma);
       ok(res, 'Bulk sync concluído.', null);
     } catch (e) {
       next(e);
