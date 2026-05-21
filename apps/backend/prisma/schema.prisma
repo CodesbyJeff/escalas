@@ -29,8 +29,12 @@ model User {
   last_sync_at    DateTime
   lotacoes        UserLotacao[]
   roles           UserRole[]
-  templates_criados TemplateLotacao[]
-  created_at      DateTime      @default(now())
+  templates_criados  TemplateLotacao[]
+  escalas_criadas    Escala[]          @relation("EscalaCriador")
+  vagas              Vaga[]            @relation("VagaMilitar")
+  versoes_publicadas EscalaVersao[]    @relation("VersaoPublicador")
+  audit_logs         AuditLog[]
+  created_at         DateTime          @default(now())
   updated_at      DateTime      @updatedAt
 }
 
@@ -47,6 +51,7 @@ model Lotacao {
   user_lotacoes   UserLotacao[]
   user_roles      UserRole[]
   template        TemplateLotacao?
+  escalas         Escala[]
 }
 
 model UserLotacao {
@@ -113,4 +118,106 @@ model TemplateVagaSugerida {
   guarnicao TemplateGuarnicao @relation(fields: [template_guarnicao_id], references: [id], onDelete: Cascade)
 
   @@index([template_guarnicao_id])
+}
+
+enum EscalaStatus {
+  rascunho
+  publicada
+  em_validacao
+  aprovada
+  rejeitada
+}
+
+model Escala {
+  id            Int          @id @default(autoincrement())
+  lotacao_id    Int
+  mes           Int
+  ano           Int
+  status        EscalaStatus @default(rascunho)
+  criado_por_id Int
+  publicado_em  DateTime?
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+
+  lotacao    Lotacao        @relation(fields: [lotacao_id], references: [id])
+  criado_por User           @relation("EscalaCriador", fields: [criado_por_id], references: [id])
+  dias       EscalaDia[]
+  versoes    EscalaVersao[]
+
+  @@unique([lotacao_id, mes, ano])
+  @@index([criado_por_id])
+}
+
+model EscalaDia {
+  id          Int      @id @default(autoincrement())
+  escala_id   Int
+  data        DateTime
+  observacoes String?
+
+  escala     Escala            @relation(fields: [escala_id], references: [id], onDelete: Cascade)
+  guarnicoes EscalaGuarnicao[]
+
+  @@unique([escala_id, data])
+}
+
+model EscalaGuarnicao {
+  id            Int     @id @default(autoincrement())
+  escala_dia_id Int
+  sigla         String
+  atividade     String
+  viatura_id    String?
+  turno_inicio  String
+  turno_fim     String
+  ordem         Int
+
+  dia   EscalaDia @relation(fields: [escala_dia_id], references: [id], onDelete: Cascade)
+  vagas Vaga[]
+
+  @@index([escala_dia_id])
+}
+
+model Vaga {
+  id                  Int     @id @default(autoincrement())
+  escala_guarnicao_id Int
+  funcao              String
+  militar_id          Int?
+  turno_inicio        String
+  turno_fim           String
+  observacoes         String?
+
+  guarnicao EscalaGuarnicao @relation(fields: [escala_guarnicao_id], references: [id], onDelete: Cascade)
+  militar   User?           @relation("VagaMilitar", fields: [militar_id], references: [id])
+
+  @@index([escala_guarnicao_id])
+  @@index([militar_id])
+}
+
+model EscalaVersao {
+  id               Int      @id @default(autoincrement())
+  escala_id        Int
+  versao           Int
+  publicado_por_id Int
+  publicado_em     DateTime @default(now())
+  conteudo         Json
+
+  escala        Escala @relation(fields: [escala_id], references: [id], onDelete: Cascade)
+  publicado_por User   @relation("VersaoPublicador", fields: [publicado_por_id], references: [id])
+
+  @@unique([escala_id, versao])
+}
+
+model AuditLog {
+  id             Int      @id @default(autoincrement())
+  user_id        Int?
+  acao           String
+  entidade       String
+  entidade_id    Int
+  payload_antes  Json?
+  payload_depois Json?
+  created_at     DateTime @default(now())
+
+  user User? @relation(fields: [user_id], references: [id])
+
+  @@index([entidade, entidade_id])
+  @@index([user_id, created_at])
 }
