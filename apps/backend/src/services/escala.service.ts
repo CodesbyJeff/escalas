@@ -243,7 +243,7 @@ export const escalaService = {
       .flatMap((d) => d.guarnicoes.flatMap((g) => g.vagas.map((v) => v.militar_id)))
       .filter((x): x is number => x != null);
     const militares = await prisma.user.findMany({
-      where: { id: { in: militarIds } },
+      where: { id: { in: [...new Set(militarIds)] } },
       select: { id: true, nome: true, nome_curto: true, posto: true, matricula: true },
     });
     const mapaMil = new Map(militares.map((m) => [m.id, m]));
@@ -265,25 +265,33 @@ export const escalaService = {
       })),
     };
 
-    return prisma.$transaction(async (tx) => {
-      const ultima = await tx.escalaVersao.findFirst({
-        where: { escala_id },
-        orderBy: { versao: 'desc' },
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const ultima = await tx.escalaVersao.findFirst({
+          where: { escala_id },
+          orderBy: { versao: 'desc' },
+        });
+        const versao = (ultima?.versao ?? 0) + 1;
+        const nova = await tx.escalaVersao.create({
+          data: { escala_id, versao, publicado_por_id: user_id, conteudo: conteudo as never },
+        });
+        await tx.escala.update({
+          where: { id: escala_id },
+          data: { status: 'em_validacao', publicado_em: new Date() },
+        });
+        await auditService.log(
+          { user_id, acao: 'publicar', entidade: 'Escala', entidade_id: escala_id, antes: null, depois: { versao } },
+          tx,
+        );
+        return nova;
       });
-      const versao = (ultima?.versao ?? 0) + 1;
-      const nova = await tx.escalaVersao.create({
-        data: { escala_id, versao, publicado_por_id: user_id, conteudo: conteudo as never },
-      });
-      await tx.escala.update({
-        where: { id: escala_id },
-        data: { status: 'em_validacao', publicado_em: new Date() },
-      });
-      await auditService.log(
-        { user_id, acao: 'publicar', entidade: 'Escala', entidade_id: escala_id, antes: null, depois: { versao } },
-        tx,
-      );
-      return nova;
-    });
+    } catch (e) {
+      // P2002 = corrida na numeração de versão concorrente
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictError('Publicação concorrente detectada — tente novamente.');
+      }
+      throw e;
+    }
   },
 
   async listarVersoes(escala_id: number, prisma: PrismaClient) {
