@@ -70,4 +70,59 @@ export const escalaService = {
       throw e;
     }
   },
+
+  async listar(
+    filtro: { lotacao_id?: number; mes?: number; ano?: number; status?: string },
+    prisma: PrismaClient,
+  ) {
+    return prisma.escala.findMany({
+      where: {
+        ...(filtro.lotacao_id && { lotacao_id: filtro.lotacao_id }),
+        ...(filtro.mes && { mes: filtro.mes }),
+        ...(filtro.ano && { ano: filtro.ano }),
+        ...(filtro.status && { status: filtro.status as never }),
+      },
+      orderBy: [{ ano: 'desc' }, { mes: 'desc' }],
+    });
+  },
+
+  async getDetalhe(id: number, prisma: PrismaClient) {
+    return prisma.escala.findUnique({
+      where: { id },
+      include: {
+        dias: {
+          orderBy: { data: 'asc' },
+          include: {
+            guarnicoes: {
+              orderBy: { ordem: 'asc' },
+              include: { vagas: { orderBy: { id: 'asc' } } },
+            },
+          },
+        },
+      },
+    });
+  },
+
+  async getMes(id: number, prisma: PrismaClient) {
+    const escala = await prisma.escala.findUnique({
+      where: { id },
+      include: { dias: { orderBy: { data: 'asc' }, include: { guarnicoes: { include: { vagas: true } } } } },
+    });
+    if (!escala) return null;
+    return {
+      id: escala.id,
+      mes: escala.mes,
+      ano: escala.ano,
+      status: escala.status,
+      dias: escala.dias.map((d) => {
+        const vagas = d.guarnicoes.flatMap((g) => g.vagas);
+        const preenchidas = vagas.filter((v) => v.militar_id != null).length;
+        return {
+          data: d.data.toISOString().slice(0, 10),
+          vagas_total: vagas.length,
+          vagas_preenchidas: preenchidas,
+        };
+      }),
+    };
+  },
 };

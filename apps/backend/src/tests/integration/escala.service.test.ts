@@ -80,3 +80,39 @@ describe('escalaService.criar', () => {
     expect(logs).toHaveLength(1);
   });
 });
+
+describe('escalaService.listar / getDetalhe / getMes', () => {
+  async function escalaPronta(lotId: number, cpf: string) {
+    const lot = await seedLotacao(lotId);
+    const user = await seedUser(cpf);
+    await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    return { lot, user, escala };
+  }
+
+  it('listar filtra por lotacao_id e status', async () => {
+    const { lot } = await escalaPronta(810, '11111111111');
+    const lista = await escalaService.listar({ lotacao_id: lot.id, status: 'rascunho' }, testPrisma);
+    expect(lista).toHaveLength(1);
+    const vazia = await escalaService.listar({ lotacao_id: lot.id, status: 'aprovada' }, testPrisma);
+    expect(vazia).toHaveLength(0);
+  });
+
+  it('getDetalhe traz dias com guarnições e vagas', async () => {
+    const { escala } = await escalaPronta(811, '22222222222');
+    const det = await escalaService.getDetalhe(escala.id, testPrisma);
+    expect(det!.dias).toHaveLength(30);
+    expect(det!.dias[0]!.guarnicoes[0]!.vagas).toHaveLength(3);
+  });
+
+  it('getDetalhe retorna null se não existe', async () => {
+    expect(await escalaService.getDetalhe(999999, testPrisma)).toBeNull();
+  });
+
+  it('getMes resume status por dia', async () => {
+    const { escala } = await escalaPronta(812, '33333333333');
+    const mes = await escalaService.getMes(escala.id, testPrisma);
+    expect(mes!.dias).toHaveLength(30);
+    expect(mes!.dias[0]).toMatchObject({ vagas_total: 3, vagas_preenchidas: 0 });
+  });
+});
