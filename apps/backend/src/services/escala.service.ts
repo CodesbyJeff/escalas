@@ -234,4 +234,69 @@ export const escalaService = {
     };
     return this.putDia(escala_id, dataDestinoStr, input, user_id, prisma);
   },
+
+  async publicar(escala_id: number, user_id: number, prisma: PrismaClient) {
+    const escala = await this.getDetalhe(escala_id, prisma);
+    if (!escala) throw new NotFoundError('Escala não encontrada.');
+
+    const militarIds = escala.dias
+      .flatMap((d) => d.guarnicoes.flatMap((g) => g.vagas.map((v) => v.militar_id)))
+      .filter((x): x is number => x != null);
+    const militares = await prisma.user.findMany({
+      where: { id: { in: militarIds } },
+      select: { id: true, nome: true, nome_curto: true, posto: true, matricula: true },
+    });
+    const mapaMil = new Map(militares.map((m) => [m.id, m]));
+
+    const conteudo = {
+      escala: { id: escala.id, lotacao_id: escala.lotacao_id, mes: escala.mes, ano: escala.ano },
+      dias: escala.dias.map((d) => ({
+        data: d.data.toISOString().slice(0, 10),
+        observacoes: d.observacoes,
+        guarnicoes: d.guarnicoes.map((g) => ({
+          sigla: g.sigla, atividade: g.atividade, viatura_id: g.viatura_id,
+          turno_inicio: g.turno_inicio, turno_fim: g.turno_fim, ordem: g.ordem,
+          vagas: g.vagas.map((v) => ({
+            funcao: v.funcao, turno_inicio: v.turno_inicio, turno_fim: v.turno_fim,
+            observacoes: v.observacoes,
+            militar: v.militar_id != null ? (mapaMil.get(v.militar_id) ?? { id: v.militar_id }) : null,
+          })),
+        })),
+      })),
+    };
+
+    return prisma.$transaction(async (tx) => {
+      const ultima = await tx.escalaVersao.findFirst({
+        where: { escala_id },
+        orderBy: { versao: 'desc' },
+      });
+      const versao = (ultima?.versao ?? 0) + 1;
+      const nova = await tx.escalaVersao.create({
+        data: { escala_id, versao, publicado_por_id: user_id, conteudo: conteudo as never },
+      });
+      await tx.escala.update({
+        where: { id: escala_id },
+        data: { status: 'em_validacao', publicado_em: new Date() },
+      });
+      await auditService.log(
+        { user_id, acao: 'publicar', entidade: 'Escala', entidade_id: escala_id, antes: null, depois: { versao } },
+        tx,
+      );
+      return nova;
+    });
+  },
+
+  async listarVersoes(escala_id: number, prisma: PrismaClient) {
+    return prisma.escalaVersao.findMany({
+      where: { escala_id },
+      orderBy: { versao: 'desc' },
+      select: { id: true, versao: true, publicado_por_id: true, publicado_em: true },
+    });
+  },
+
+  async getVersao(escala_id: number, versao: number, prisma: PrismaClient) {
+    return prisma.escalaVersao.findUnique({
+      where: { escala_id_versao: { escala_id, versao } },
+    });
+  },
 };

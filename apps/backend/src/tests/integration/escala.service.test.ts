@@ -210,3 +210,45 @@ describe('escalaService.duplicarDia', () => {
     ).rejects.toMatchObject({ status: 404 });
   });
 });
+
+describe('escalaService.publicar / versões', () => {
+  async function pronta(lotId: number, cpf: string) {
+    const lot = await seedLotacao(lotId);
+    const user = await seedUser(cpf);
+    await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    return { user, escala };
+  }
+
+  it('publicar cria versão 1 e seta em_validacao', async () => {
+    const { user, escala } = await pronta(840, '11211211211');
+    const v = await escalaService.publicar(escala.id, user.id, testPrisma);
+    expect(v.versao).toBe(1);
+    const e = await testPrisma.escala.findUnique({ where: { id: escala.id } });
+    expect(e!.status).toBe('em_validacao');
+    expect(e!.publicado_em).not.toBeNull();
+  });
+
+  it('republicar incrementa para versão 2', async () => {
+    const { user, escala } = await pronta(841, '22322322322');
+    await escalaService.publicar(escala.id, user.id, testPrisma);
+    const v2 = await escalaService.publicar(escala.id, user.id, testPrisma);
+    expect(v2.versao).toBe(2);
+  });
+
+  it('snapshot contém os dias', async () => {
+    const { user, escala } = await pronta(842, '33433433433');
+    const v = await escalaService.publicar(escala.id, user.id, testPrisma);
+    const conteudo = v.conteudo as { dias: unknown[] };
+    expect(conteudo.dias).toHaveLength(30);
+  });
+
+  it('listarVersoes e getVersao', async () => {
+    const { user, escala } = await pronta(843, '44544544544');
+    await escalaService.publicar(escala.id, user.id, testPrisma);
+    const lista = await escalaService.listarVersoes(escala.id, testPrisma);
+    expect(lista).toHaveLength(1);
+    const v1 = await escalaService.getVersao(escala.id, 1, testPrisma);
+    expect(v1!.versao).toBe(1);
+  });
+});
