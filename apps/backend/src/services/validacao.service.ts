@@ -72,4 +72,29 @@ export const validacaoService = {
       return validacao;
     });
   },
+
+  async listarPendentes(lotacao_ids: number[] | undefined, prisma: PrismaClient) {
+    return prisma.escala.findMany({
+      where: {
+        status: 'em_validacao',
+        ...(lotacao_ids ? { lotacao_id: { in: lotacao_ids } } : {}),
+      },
+      orderBy: [{ ano: 'desc' }, { mes: 'desc' }],
+    });
+  },
+
+  async listarValidacoes(escala_id: number, prisma: PrismaClient) {
+    return prisma.validacaoEscala.findMany({
+      where: { escala_id },
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        escala_versao_id: true,
+        gestor_id: true,
+        status: true,
+        justificativa: true,
+        created_at: true,
+      },
+    });
+  },
 };

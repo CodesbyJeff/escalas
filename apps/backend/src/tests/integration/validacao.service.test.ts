@@ -81,3 +81,38 @@ describe('validacaoService.validar', () => {
     ).rejects.toMatchObject({ status: 404 });
   });
 });
+
+describe('validacaoService.listarPendentes', () => {
+  it('escopa às lotações passadas (gestor) e só status em_validacao', async () => {
+    const a = await emValidacao(910, '91191191191'); // em_validacao na lotação 910
+    await emValidacao(911, '91291291291');            // em_validacao na lotação 911 (outra)
+    const lista = await validacaoService.listarPendentes([a.lot.id], testPrisma);
+    expect(lista).toHaveLength(1);
+    expect(lista[0]!.lotacao_id).toBe(a.lot.id);
+  });
+
+  it('com lotacao_ids = undefined (super-admin) retorna todas as em_validacao', async () => {
+    await emValidacao(912, '91391391391');
+    await emValidacao(913, '91491491491');
+    const lista = await validacaoService.listarPendentes(undefined, testPrisma);
+    expect(lista.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('lista vazia quando o gestor não tem lotações', async () => {
+    await emValidacao(914, '91591591591');
+    const lista = await validacaoService.listarPendentes([], testPrisma);
+    expect(lista).toHaveLength(0);
+  });
+});
+
+describe('validacaoService.listarValidacoes', () => {
+  it('retorna o histórico da escala em ordem desc, sem o snapshot', async () => {
+    const { escala, gestor } = await emValidacao(915, '91691691691');
+    mockMapaForca();
+    await validacaoService.validar(escala.id, { status: 'rejeitada', justificativa: 'corrigir' }, gestor.id, testPrisma);
+    const hist = await validacaoService.listarValidacoes(escala.id, testPrisma);
+    expect(hist).toHaveLength(1);
+    expect(hist[0]!.status).toBe('rejeitada');
+    expect(hist[0]).not.toHaveProperty('mapa_forca_snapshot');
+  });
+});
