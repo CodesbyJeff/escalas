@@ -3,8 +3,9 @@ import { authMiddleware } from '../middlewares/auth.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { requireEscalaAccess } from '../middlewares/requireEscalaAccess.js';
 import { validate } from '../middlewares/validate.js';
-import { criarEscalaSchema, putDiaSchema, duplicarDiaSchema } from '@escalas/shared-schemas';
+import { criarEscalaSchema, putDiaSchema, duplicarDiaSchema, validarEscalaSchema } from '@escalas/shared-schemas';
 import { escalaController } from '../controllers/escala.controller.js';
+import { validacaoController } from '../controllers/validacao.controller.js';
 
 export const escalaRoutes = Router();
 
@@ -27,3 +28,7 @@ escalaRoutes.post('/:id/publicar', requireEscalaAccess(['ESCALANTE']), escalaCon
 escalaRoutes.delete('/:id', requireEscalaAccess(['ESCALANTE']), escalaController.deletar);
 escalaRoutes.get('/:id/versoes', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.listarVersoes);
 escalaRoutes.get('/:id/versoes/:versao', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.getVersao);
+
+escalaRoutes.get('/:id/mapa-forca', requireEscalaAccess(['ESCALANTE', 'GESTOR']), validacaoController.mapaForca);
+escalaRoutes.post('/:id/validar', requireEscalaAccess(['GESTOR']), validate(validarEscalaSchema), validacaoController.validar);
+escalaRoutes.get('/:id/validacoes', requireEscalaAccess(['ESCALANTE', 'GESTOR']), validacaoController.listarValidacoes);
