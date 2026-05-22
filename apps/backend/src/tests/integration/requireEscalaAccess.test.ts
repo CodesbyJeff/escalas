@@ -43,4 +43,12 @@ describe('requireEscalaAccess (via GET /escalas/:id)', () => {
     const r = await request(buildApp()).get(`/api/v1/escalas/${escala.id}`).set('authorization', `Bearer ${signAccess({ user_id: admin.id, cpf: admin.cpf })}`);
     expect(r.status).toBe(200);
   });
+
+  it('200 para GESTOR da lotação (leitura)', async () => {
+    const { escala, lot } = await escalaDe(864);
+    const gestor = await testPrisma.user.create({ data: { cpf: '10101017777', nome: 'G', last_sync_at: new Date() } });
+    await testPrisma.userRole.create({ data: { user_id: gestor.id, role: 'GESTOR', lotacao_id: lot.id, created_by: gestor.id } });
+    const r = await request(buildApp()).get(`/api/v1/escalas/${escala.id}`).set('authorization', `Bearer ${signAccess({ user_id: gestor.id, cpf: gestor.cpf })}`);
+    expect(r.status).toBe(200);
+  });
 });

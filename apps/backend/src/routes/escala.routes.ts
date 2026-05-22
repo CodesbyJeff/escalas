@@ -18,12 +18,12 @@ escalaRoutes.post(
   escalaController.criar,
 );
 
-escalaRoutes.get('/:id', requireEscalaAccess, escalaController.getDetalhe);
-escalaRoutes.get('/:id/mes', requireEscalaAccess, escalaController.getMes);
-escalaRoutes.get('/:id/dias/:data', requireEscalaAccess, escalaController.getDia);
-escalaRoutes.put('/:id/dias/:data', requireEscalaAccess, validate(putDiaSchema), escalaController.putDia);
-escalaRoutes.post('/:id/dias/:data/duplicar', requireEscalaAccess, validate(duplicarDiaSchema), escalaController.duplicarDia);
-escalaRoutes.post('/:id/publicar', requireEscalaAccess, escalaController.publicar);
-escalaRoutes.delete('/:id', requireEscalaAccess, escalaController.deletar);
-escalaRoutes.get('/:id/versoes', requireEscalaAccess, escalaController.listarVersoes);
-escalaRoutes.get('/:id/versoes/:versao', requireEscalaAccess, escalaController.getVersao);
+escalaRoutes.get('/:id', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.getDetalhe);
+escalaRoutes.get('/:id/mes', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.getMes);
+escalaRoutes.get('/:id/dias/:data', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.getDia);
+escalaRoutes.put('/:id/dias/:data', requireEscalaAccess(['ESCALANTE']), validate(putDiaSchema), escalaController.putDia);
+escalaRoutes.post('/:id/dias/:data/duplicar', requireEscalaAccess(['ESCALANTE']), validate(duplicarDiaSchema), escalaController.duplicarDia);
+escalaRoutes.post('/:id/publicar', requireEscalaAccess(['ESCALANTE']), escalaController.publicar);
+escalaRoutes.delete('/:id', requireEscalaAccess(['ESCALANTE']), escalaController.deletar);
+escalaRoutes.get('/:id/versoes', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.listarVersoes);
+escalaRoutes.get('/:id/versoes/:versao', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.getVersao);
