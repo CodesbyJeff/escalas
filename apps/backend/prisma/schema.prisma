@@ -34,6 +34,7 @@ model User {
   vagas              Vaga[]            @relation("VagaMilitar")
   versoes_publicadas EscalaVersao[]    @relation("VersaoPublicador")
   audit_logs         AuditLog[]
+  validacoes_feitas  ValidacaoEscala[] @relation("ValidacaoGestor")
   created_at         DateTime          @default(now())
   updated_at      DateTime      @updatedAt
 }
@@ -143,6 +144,7 @@ model Escala {
   criado_por User           @relation("EscalaCriador", fields: [criado_por_id], references: [id])
   dias       EscalaDia[]
   versoes    EscalaVersao[]
+  validacoes ValidacaoEscala[]
 
   @@unique([lotacao_id, mes, ano])
   @@index([criado_por_id])
@@ -202,6 +204,7 @@ model EscalaVersao {
 
   escala        Escala @relation(fields: [escala_id], references: [id], onDelete: Cascade)
   publicado_por User   @relation("VersaoPublicador", fields: [publicado_por_id], references: [id])
+  validacoes    ValidacaoEscala[]
 
   @@unique([escala_id, versao])
 }
@@ -220,4 +223,27 @@ model AuditLog {
 
   @@index([entidade, entidade_id])
   @@index([user_id, created_at])
+}
+
+enum ValidacaoStatus {
+  aprovada
+  rejeitada
+}
+
+model ValidacaoEscala {
+  id                  Int             @id @default(autoincrement())
+  escala_id           Int
+  escala_versao_id    Int
+  gestor_id           Int
+  status              ValidacaoStatus
+  justificativa       String?
+  mapa_forca_snapshot Json
+  created_at          DateTime        @default(now())
+
+  escala        Escala       @relation(fields: [escala_id], references: [id], onDelete: Cascade)
+  escala_versao EscalaVersao @relation(fields: [escala_versao_id], references: [id], onDelete: Restrict)
+  gestor        User         @relation("ValidacaoGestor", fields: [gestor_id], references: [id], onDelete: Restrict)
+
+  @@index([escala_id])
+  @@index([gestor_id])
 }
