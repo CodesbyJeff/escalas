@@ -35,3 +35,8 @@ export interface SnapshotResponse {
 export interface LoginAdResponse {
   success: boolean;
 }
+
+export interface MapaForcaResponse {
+  militares: Record<string, unknown>[];
+  resumo: Record<string, unknown> | null;
+}

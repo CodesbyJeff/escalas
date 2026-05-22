@@ -57,4 +57,14 @@ describe('SisbomClient', () => {
     expect(r.items).toHaveLength(1);
     expect(r.has_more).toBe(false);
   });
+
+  it('getMapaForca repassa lotacao/date/período e retorna { militares, resumo }', async () => {
+    nock(ext.origin)
+      .get(ext.pathname + '/mapa-forca')
+      .query(true)
+      .reply(200, { militares: [{ _id: 'm1', _lotacao: 100, str_nomecurto: 'SD X' }], resumo: { _lotacao: 100, totais: { total: 3 } } });
+    const r = await sisbomClient.getMapaForca({ lotacao: 100, date: '2026-06-01', date_start: '2026-06-01', date_end: '2026-06-30' });
+    expect(r.militares).toHaveLength(1);
+    expect(r.resumo).toMatchObject({ _lotacao: 100 });
+  });
 });

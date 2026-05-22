@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 import { env } from '../../config/env.js';
-import type { EventsResponse, LoginAdResponse, MirrorRefResponse, SnapshotResponse } from './types.js';
+import type { EventsResponse, LoginAdResponse, MapaForcaResponse, MirrorRefResponse, SnapshotResponse } from './types.js';
 
 class SisbomClient {
   private external: AxiosInstance;
@@ -48,6 +48,23 @@ class SisbomClient {
   async getSnapshot(params: { entity: string; skip?: number; limit?: number }): Promise<SnapshotResponse> {
     const res = await this.external.get<SnapshotResponse>('/snapshot', {
       params: { entity: params.entity, skip: params.skip ?? 0, limit: params.limit ?? 500 },
+    });
+    return res.data;
+  }
+
+  async getMapaForca(params: {
+    lotacao: number;
+    date: string;
+    date_start: string;
+    date_end: string;
+  }): Promise<MapaForcaResponse> {
+    const res = await this.external.get<MapaForcaResponse>('/mapa-forca', {
+      params: {
+        lotacao: params.lotacao,
+        date: params.date,
+        date_start: params.date_start,
+        date_end: params.date_end,
+      },
     });
     return res.data;
   }
