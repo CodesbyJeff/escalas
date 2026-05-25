@@ -4,6 +4,10 @@ import { buildApp } from '../../app.js';
 import { testPrisma } from '../helpers/db.js';
 import { signAccess } from '../../config/jwt.js';
 
+// ────────────────────────────────────────────────────────────────────────────
+// Helpers reutilizados pelos describes abaixo
+// ────────────────────────────────────────────────────────────────────────────
+
 async function setup(lotId: number) {
   const lot = await testPrisma.lotacao.create({
     data: { id: lotId, sigla: `L${lotId}`, nome: 'Lot', nivel: 3, operacional: true },
@@ -118,5 +122,98 @@ describe('publicar / versões / deletar', () => {
     const { token: t2, escalaId: id2 } = await comEscala(882);
     const del2 = await request(buildApp()).delete(`/api/v1/escalas/${id2}`).set('authorization', `Bearer ${t2}`);
     expect(del2.status).toBe(200);
+  });
+});
+
+describe('GET /api/v1/escalas/:id/militares', () => {
+  async function setupMilitares(lotId: number) {
+    // Lotação
+    const lot = await testPrisma.lotacao.create({
+      data: { id: lotId, sigla: `L${lotId}`, nome: 'Lot Militares', nivel: 3, operacional: true },
+    });
+
+    // Escalante com role ESCALANTE na lotação
+    const escalante = await testPrisma.user.create({
+      data: { cpf: `ESC${lotId}`, nome: 'Escalante', last_sync_at: new Date() },
+    });
+    await testPrisma.userRole.create({
+      data: { user_id: escalante.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: escalante.id },
+    });
+
+    // Template mínimo para criar a escala via POST
+    await testPrisma.templateLotacao.create({
+      data: {
+        lotacao_id: lot.id,
+        criado_por_id: escalante.id,
+        guarnicoes: {
+          create: [{
+            sigla: 'ABT-01',
+            atividade: 'incendio',
+            turno_padrao_inicio: '07:00',
+            turno_padrao_fim: '19:00',
+            ordem: 0,
+            vagas_sugeridas: { create: [{ funcao: 'comandante', quantidade_sugerida: 1 }] },
+          }],
+        },
+      },
+    });
+
+    // Dois militares vinculados à lotação via UserLotacao
+    const anaPaula = await testPrisma.user.create({
+      data: { cpf: `ANA${lotId}`, nome: 'Ana Paula', last_sync_at: new Date(), ativo: true },
+    });
+    await testPrisma.userLotacao.create({ data: { user_id: anaPaula.id, lotacao_id: lot.id, nivel: 3 } });
+
+    const bruno = await testPrisma.user.create({
+      data: { cpf: `BRU${lotId}`, nome: 'Bruno', last_sync_at: new Date(), ativo: true },
+    });
+    await testPrisma.userLotacao.create({ data: { user_id: bruno.id, lotacao_id: lot.id, nivel: 3 } });
+
+    // Forasteiro sem nenhuma role na lotação
+    const forasteiro = await testPrisma.user.create({
+      data: { cpf: `FOR${lotId}`, nome: 'Forasteiro', last_sync_at: new Date() },
+    });
+
+    // Cria a escala via service (POST)
+    const token = signAccess({ user_id: escalante.id, cpf: escalante.cpf });
+    const r = await request(buildApp())
+      .post('/api/v1/escalas')
+      .set('authorization', `Bearer ${token}`)
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+    const escalaId = r.body.data.id as number;
+
+    return { lot, escalante, anaPaula, bruno, forasteiro, escalaId, token };
+  }
+
+  it('lista militares da lotação da escala (ESCALANTE) e filtra por busca', async () => {
+    const { escalante, anaPaula, bruno, escalaId } = await setupMilitares(890);
+    const token = signAccess({ user_id: escalante.id, cpf: escalante.cpf });
+
+    // Sem filtro: deve retornar todos militares da lotação
+    const resAll = await request(buildApp())
+      .get(`/api/v1/escalas/${escalaId}/militares`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(resAll.status).toBe(200);
+    expect(resAll.body.success).toBe(true);
+    expect(resAll.body.data.map((m: { nome: string }) => m.nome)).toEqual(
+      expect.arrayContaining([anaPaula.nome, bruno.nome]),
+    );
+    expect(resAll.body.data[0]).toHaveProperty('posto');
+
+    // Com filtro: só Ana Paula
+    const resBusca = await request(buildApp())
+      .get(`/api/v1/escalas/${escalaId}/militares?busca=Ana`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(resBusca.body.data).toHaveLength(1);
+    expect(resBusca.body.data[0].nome).toBe('Ana Paula');
+  });
+
+  it('403 para usuário sem papel na lotação da escala', async () => {
+    const { forasteiro, escalaId } = await setupMilitares(891);
+    const token = signAccess({ user_id: forasteiro.id, cpf: forasteiro.cpf });
+    const res = await request(buildApp())
+      .get(`/api/v1/escalas/${escalaId}/militares`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(403);
   });
 });

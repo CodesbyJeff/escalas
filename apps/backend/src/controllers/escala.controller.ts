@@ -3,6 +3,8 @@ import { prisma } from '../config/db.js';
 import { ok, fail } from '../utils/response.js';
 import { HttpError } from '../utils/errors.js';
 import { escalaService } from '../services/escala.service.js';
+import { adminService } from '../services/admin.service.js';
+import type { MilitarDTO } from '@escalas/shared-types';
 
 function handle(res: Response, next: NextFunction, e: unknown): void {
   if (e instanceof HttpError) {
@@ -118,5 +120,24 @@ export const escalaController = {
       if (!v) { fail(res, 'Versão não encontrada.', 404); return; }
       ok(res, 'Versão obtida.', v);
     } catch (e) { next(e); }
+  },
+
+  async listarMilitares(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const busca = typeof req.query.busca === 'string' ? req.query.busca : undefined;
+      const lotacao_id = req.escala!.lotacao_id;
+      const users = await adminService.listarUsuarios({ q: busca, lotacao_id }, prisma);
+      const data: MilitarDTO[] = users.map((u) => ({
+        id: u.id,
+        nome: u.nome,
+        nome_curto: u.nome_curto,
+        matricula: u.matricula,
+        posto: u.posto,
+      }));
+      ok(res, 'Militares listados.', data);
+    } catch (e) {
+      if (e instanceof HttpError) { fail(res, e.message, e.status); return; }
+      next(e);
+    }
   },
 };

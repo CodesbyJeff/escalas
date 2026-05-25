@@ -32,3 +32,9 @@ escalaRoutes.get('/:id/versoes/:versao', requireEscalaAccess(['ESCALANTE', 'GEST
 escalaRoutes.get('/:id/mapa-forca', requireEscalaAccess(['ESCALANTE', 'GESTOR']), validacaoController.mapaForca);
 escalaRoutes.post('/:id/validar', requireEscalaAccess(['GESTOR']), validate(validarEscalaSchema), validacaoController.validar);
 escalaRoutes.get('/:id/validacoes', requireEscalaAccess(['ESCALANTE', 'GESTOR']), validacaoController.listarValidacoes);
+
+escalaRoutes.get(
+  '/:id/militares',
+  requireEscalaAccess(['ESCALANTE', 'GESTOR']),
+  escalaController.listarMilitares,
+);
