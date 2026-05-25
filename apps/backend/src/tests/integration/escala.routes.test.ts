@@ -186,8 +186,7 @@ describe('GET /api/v1/escalas/:id/militares', () => {
   }
 
   it('lista militares da lotação da escala (ESCALANTE) e filtra por busca', async () => {
-    const { escalante, anaPaula, bruno, escalaId } = await setupMilitares(890);
-    const token = signAccess({ user_id: escalante.id, cpf: escalante.cpf });
+    const { escalante, anaPaula, bruno, escalaId, token } = await setupMilitares(890);
 
     // Sem filtro: deve retornar todos militares da lotação
     const resAll = await request(buildApp())
@@ -199,6 +198,8 @@ describe('GET /api/v1/escalas/:id/militares', () => {
       expect.arrayContaining([anaPaula.nome, bruno.nome]),
     );
     expect(resAll.body.data[0]).toHaveProperty('posto');
+    expect(resAll.body.data[0]).not.toHaveProperty('cpf');
+    expect(resAll.body.data[0]).not.toHaveProperty('senha_hash');
 
     // Com filtro: só Ana Paula
     const resBusca = await request(buildApp())

@@ -135,9 +135,6 @@ export const escalaController = {
         posto: u.posto,
       }));
       ok(res, 'Militares listados.', data);
-    } catch (e) {
-      if (e instanceof HttpError) { fail(res, e.message, e.status); return; }
-      next(e);
-    }
+    } catch (e) { handle(res, next, e); }
   },
 };
