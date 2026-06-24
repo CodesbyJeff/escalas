@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppEscalasIndexRouteImport } from './routes/_app/escalas/index'
 import { Route as AppEscalasNovaRouteImport } from './routes/_app/escalas/nova'
+import { Route as AppEscalasIdRouteImport } from './routes/_app/escalas/$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -39,16 +40,23 @@ const AppEscalasNovaRoute = AppEscalasNovaRouteImport.update({
   path: '/escalas/nova',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEscalasIdRoute = AppEscalasIdRouteImport.update({
+  id: '/escalas/$id',
+  path: '/escalas/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/escalas/$id': typeof AppEscalasIdRoute
   '/escalas/nova': typeof AppEscalasNovaRoute
   '/escalas/': typeof AppEscalasIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AppIndexRoute
+  '/escalas/$id': typeof AppEscalasIdRoute
   '/escalas/nova': typeof AppEscalasNovaRoute
   '/escalas': typeof AppEscalasIndexRoute
 }
@@ -57,19 +65,21 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/escalas/$id': typeof AppEscalasIdRoute
   '/_app/escalas/nova': typeof AppEscalasNovaRoute
   '/_app/escalas/': typeof AppEscalasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/escalas/nova' | '/escalas/'
+  fullPaths: '/' | '/login' | '/escalas/$id' | '/escalas/nova' | '/escalas/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/escalas/nova' | '/escalas'
+  to: '/login' | '/' | '/escalas/$id' | '/escalas/nova' | '/escalas'
   id:
     | '__root__'
     | '/_app'
     | '/login'
     | '/_app/'
+    | '/_app/escalas/$id'
     | '/_app/escalas/nova'
     | '/_app/escalas/'
   fileRoutesById: FileRoutesById
@@ -116,17 +126,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEscalasNovaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/escalas/$id': {
+      id: '/_app/escalas/$id'
+      path: '/escalas/$id'
+      fullPath: '/escalas/$id'
+      preLoaderRoute: typeof AppEscalasIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppEscalasIdRoute: typeof AppEscalasIdRoute
   AppEscalasNovaRoute: typeof AppEscalasNovaRoute
   AppEscalasIndexRoute: typeof AppEscalasIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppEscalasIdRoute: AppEscalasIdRoute,
   AppEscalasNovaRoute: AppEscalasNovaRoute,
   AppEscalasIndexRoute: AppEscalasIndexRoute,
 }

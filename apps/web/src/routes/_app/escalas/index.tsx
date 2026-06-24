@@ -26,8 +26,7 @@ function ListarPage() {
       {isLoading ? <Loader /> : (
         <EscalasTable
           escalas={data ?? []}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onEditar={(e) => navigate({ to: '/escalas/$id', params: { id: String(e.id) } } as any)}
+          onEditar={(e) => navigate({ to: '/escalas/$id', params: { id: String(e.id) } })}
           onExcluir={(e) => del.mutate(e.id)}
         />
       )}

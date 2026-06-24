@@ -20,8 +20,7 @@ function NovaPage() {
           try {
             const escala = await escalasApi.criar(v);
             notifications.show({ message: 'Escala criada.' });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await navigate({ to: '/escalas/$id', params: { id: String(escala.id) } } as any);
+            await navigate({ to: '/escalas/$id', params: { id: String(escala.id) } });
           } catch (e) { notifications.show({ color: 'red', message: (e as Error).message }); }
         }}
       />
