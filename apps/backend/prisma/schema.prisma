@@ -14,21 +14,21 @@ enum Role {
 }
 
 model User {
-  id              Int           @id @default(autoincrement())
-  cpf             String        @unique
-  matricula       String?       @unique
-  nome            String
-  nome_curto      String?
-  email           String?       @unique
-  phone           String?
-  posto           String?
-  sisbom_id       String?       @unique
-  ativo           Boolean       @default(true)
-  is_super_admin  Boolean       @default(false)
-  senha_hash      String?       // bcrypt; NULL = autentica via SISBOM AD
-  last_sync_at    DateTime
-  lotacoes        UserLotacao[]
-  roles           UserRole[]
+  id                 Int               @id @default(autoincrement())
+  cpf                String            @unique
+  matricula          String?           @unique
+  nome               String
+  nome_curto         String?
+  email              String?           @unique
+  phone              String?
+  posto              String?
+  sisbom_id          String?           @unique
+  ativo              Boolean           @default(true)
+  is_super_admin     Boolean           @default(false)
+  senha_hash         String? // bcrypt; NULL = autentica via SISBOM AD
+  last_sync_at       DateTime
+  lotacoes           UserLotacao[]
+  roles              UserRole[]
   templates_criados  TemplateLotacao[]
   escalas_criadas    Escala[]          @relation("EscalaCriador")
   vagas              Vaga[]            @relation("VagaMilitar")
@@ -36,23 +36,23 @@ model User {
   audit_logs         AuditLog[]
   validacoes_feitas  ValidacaoEscala[] @relation("ValidacaoGestor")
   created_at         DateTime          @default(now())
-  updated_at      DateTime      @updatedAt
+  updated_at         DateTime          @updatedAt
 }
 
 model Lotacao {
-  id              Int           @id
-  sigla           String        @unique
-  nome            String
-  lotacao_pai_id  Int?
-  nivel           Int
-  operacional     Boolean       @default(false)
-  externo         Boolean       @default(false)
-  pai             Lotacao?      @relation("LotacaoHierarquia", fields: [lotacao_pai_id], references: [id])
-  filhas          Lotacao[]     @relation("LotacaoHierarquia")
-  user_lotacoes   UserLotacao[]
-  user_roles      UserRole[]
-  template        TemplateLotacao?
-  escalas         Escala[]
+  id             Int              @id
+  sigla          String           @unique
+  nome           String
+  lotacao_pai_id Int?
+  nivel          Int
+  operacional    Boolean          @default(false)
+  externo        Boolean          @default(false)
+  pai            Lotacao?         @relation("LotacaoHierarquia", fields: [lotacao_pai_id], references: [id])
+  filhas         Lotacao[]        @relation("LotacaoHierarquia")
+  user_lotacoes  UserLotacao[]
+  user_roles     UserRole[]
+  template       TemplateLotacao?
+  escalas        Escala[]
 }
 
 model UserLotacao {
@@ -61,25 +61,27 @@ model UserLotacao {
   nivel      Int
   user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   lotacao    Lotacao @relation(fields: [lotacao_id], references: [id])
+
   @@id([user_id, lotacao_id])
 }
 
 model UserRole {
-  id          Int      @id @default(autoincrement())
-  user_id     Int
-  role        Role
-  lotacao_id  Int?
-  created_by  Int
-  created_at  DateTime @default(now())
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  lotacao     Lotacao? @relation(fields: [lotacao_id], references: [id])
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  role       Role
+  lotacao_id Int?
+  created_by Int
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  lotacao    Lotacao? @relation(fields: [lotacao_id], references: [id])
+
   @@unique([user_id, role, lotacao_id])
 }
 
 model SyncCursor {
-  entidade            String   @id
-  last_sync_at        DateTime
-  last_mirror_ref_at  DateTime
+  entidade           String   @id
+  last_sync_at       DateTime
+  last_mirror_ref_at DateTime
 }
 
 model TemplateLotacao {
@@ -96,13 +98,13 @@ model TemplateLotacao {
 }
 
 model TemplateGuarnicao {
-  id                   Int    @id @default(autoincrement())
-  template_lotacao_id  Int
-  sigla                String
-  atividade            String
-  turno_padrao_inicio  String
-  turno_padrao_fim     String
-  ordem                Int
+  id                  Int    @id @default(autoincrement())
+  template_lotacao_id Int
+  sigla               String
+  atividade           String
+  turno_padrao_inicio String
+  turno_padrao_fim    String
+  ordem               Int
 
   template        TemplateLotacao        @relation(fields: [template_lotacao_id], references: [id], onDelete: Cascade)
   vagas_sugeridas TemplateVagaSugerida[]
@@ -140,8 +142,8 @@ model Escala {
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
 
-  lotacao    Lotacao        @relation(fields: [lotacao_id], references: [id])
-  criado_por User           @relation("EscalaCriador", fields: [criado_por_id], references: [id])
+  lotacao    Lotacao           @relation(fields: [lotacao_id], references: [id])
+  criado_por User              @relation("EscalaCriador", fields: [criado_por_id], references: [id])
   dias       EscalaDia[]
   versoes    EscalaVersao[]
   validacoes ValidacaoEscala[]
@@ -202,8 +204,8 @@ model EscalaVersao {
   publicado_em     DateTime @default(now())
   conteudo         Json
 
-  escala        Escala @relation(fields: [escala_id], references: [id], onDelete: Cascade)
-  publicado_por User   @relation("VersaoPublicador", fields: [publicado_por_id], references: [id])
+  escala        Escala            @relation(fields: [escala_id], references: [id], onDelete: Cascade)
+  publicado_por User              @relation("VersaoPublicador", fields: [publicado_por_id], references: [id])
   validacoes    ValidacaoEscala[]
 
   @@unique([escala_id, versao])
@@ -246,4 +248,24 @@ model ValidacaoEscala {
 
   @@index([escala_id])
   @@index([gestor_id])
+}
+
+enum FeriadoTipo {
+  nacional // raramente cadastrado (nacionais são calculados no util feriadosBrasil); permitido p/ casos ad-hoc
+  estadual
+  municipal
+  facultativo
+}
+
+// Feriados cadastrados manualmente (estaduais/municipais/facultativos). Global,
+// sem vínculo de lotação — igual ao ServicoFeriado do SISBOM. Usado apenas para
+// classificar serviços como fim_de_semana_feriado na contagem do mapa de força;
+// não altera o número de vagas. Feriados nacionais virão de um util, não da tabela.
+model Feriado {
+  id         Int         @id @default(autoincrement())
+  data       DateTime    @unique
+  descricao  String
+  tipo       FeriadoTipo @default(estadual)
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
 }
