@@ -12,16 +12,16 @@ const dia = {
 
 it('semeia o rascunho a partir do DTO (sem ids) e adiciona vaga VAGO', () => {
   const { result } = renderHook(() => useDiaDraft(dia));
-  expect(result.current.values.guarnicoes[0].vagas[0]).not.toHaveProperty('id');
-  expect(result.current.values.guarnicoes[0].vagas[0].militar_id).toBe(100);
+  expect(result.current.values.guarnicoes[0]!.vagas[0]).not.toHaveProperty('id');
+  expect(result.current.values.guarnicoes[0]!.vagas[0]!.militar_id).toBe(100);
   act(() => result.current.addVaga(0));
-  expect(result.current.values.guarnicoes[0].vagas).toHaveLength(2);
-  expect(result.current.values.guarnicoes[0].vagas[1].militar_id).toBeNull();
+  expect(result.current.values.guarnicoes[0]!.vagas).toHaveLength(2);
+  expect(result.current.values.guarnicoes[0]!.vagas[1]!.militar_id).toBeNull();
 });
 
 it('toPutInput devolve o payload do PUT', () => {
   const { result } = renderHook(() => useDiaDraft(dia));
   const payload = result.current.toPutInput();
-  expect(payload.guarnicoes[0].sigla).toBe('SLV');
-  expect(payload.guarnicoes[0].vagas[0].funcao).toBe('Comandante');
+  expect(payload.guarnicoes[0]!.sigla).toBe('SLV');
+  expect(payload.guarnicoes[0]!.vagas[0]!.funcao).toBe('Comandante');
 });
