@@ -5,6 +5,7 @@ import { adminRoutes } from './admin.routes.js';
 import { templateRoutes } from './template.routes.js';
 import { escalaRoutes } from './escala.routes.js';
 import { validacaoRoutes } from './validacao.routes.js';
+import { feriadoRoutes } from './feriado.routes.js';
 
 export const router = Router();
 
@@ -13,4 +14,5 @@ router.use('/admin', adminRoutes);
 router.use('/templates', templateRoutes);
 router.use('/escalas', escalaRoutes);
 router.use('/validacoes', validacaoRoutes);
+router.use('/feriados', feriadoRoutes);
 router.get('/', (_req, res) => ok(res, 'API online.', { name: 'escalas', version: 'v1' }));
