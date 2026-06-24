@@ -4,3 +4,4 @@ export * from './template.js';
 export * from './escala.js';
 export * from './validacao.js';
 export * from './militar.js';
+export * from './execucao.js';
