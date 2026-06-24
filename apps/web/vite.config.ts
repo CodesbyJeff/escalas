@@ -3,6 +3,6 @@ import react from '@vitejs/plugin-react';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 
 export default defineConfig({
-  plugins: [TanStackRouterVite(), react()],
+  plugins: [TanStackRouterVite({ routeFileIgnorePattern: '\\.test\\.tsx$' }), react()],
   server: { port: 5173 },
 });
