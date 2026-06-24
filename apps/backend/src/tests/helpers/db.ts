@@ -8,6 +8,7 @@ export async function resetDb(): Promise<void> {
   await testPrisma.auditLog.deleteMany();
   await testPrisma.validacaoEscala.deleteMany();
   await testPrisma.escalaVersao.deleteMany();
+  await testPrisma.execucaoVaga.deleteMany(); // antes de Vaga (FK)
   await testPrisma.escala.deleteMany(); // cascateia dia/guarnicao/vaga
   await testPrisma.templateLotacao.deleteMany(); // cascateia guarnicao/vaga template
   await testPrisma.userRole.deleteMany();

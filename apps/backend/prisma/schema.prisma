@@ -11,6 +11,7 @@ enum Role {
   ESCALANTE
   MILITAR
   GESTOR
+  FISCAL
 }
 
 model User {
@@ -35,6 +36,9 @@ model User {
   versoes_publicadas EscalaVersao[]    @relation("VersaoPublicador")
   audit_logs         AuditLog[]
   validacoes_feitas  ValidacaoEscala[] @relation("ValidacaoGestor")
+  execucoes_militar  ExecucaoVaga[]    @relation("ExecucaoMilitar")
+  dias_fiscalizados  EscalaDia[]       @relation("EscalaDiaFiscal")
+  dias_validados     EscalaDia[]       @relation("EscalaDiaValidador")
   created_at         DateTime          @default(now())
   updated_at         DateTime          @updatedAt
 }
@@ -153,13 +157,20 @@ model Escala {
 }
 
 model EscalaDia {
-  id          Int      @id @default(autoincrement())
-  escala_id   Int
-  data        DateTime
-  observacoes String?
+  id              Int            @id @default(autoincrement())
+  escala_id       Int
+  data            DateTime
+  observacoes     String?
+  execucao_status ExecucaoStatus @default(pendente)
+  fiscal_id       Int?
+  validado_por_id Int?
+  validado_em     DateTime?
+  justificativa   String?
 
-  escala     Escala            @relation(fields: [escala_id], references: [id], onDelete: Cascade)
-  guarnicoes EscalaGuarnicao[]
+  escala       Escala            @relation(fields: [escala_id], references: [id], onDelete: Cascade)
+  guarnicoes   EscalaGuarnicao[]
+  fiscal       User?             @relation("EscalaDiaFiscal", fields: [fiscal_id], references: [id])
+  validado_por User?             @relation("EscalaDiaValidador", fields: [validado_por_id], references: [id])
 
   @@unique([escala_id, data])
 }
@@ -191,6 +202,7 @@ model Vaga {
 
   guarnicao EscalaGuarnicao @relation(fields: [escala_guarnicao_id], references: [id], onDelete: Cascade)
   militar   User?           @relation("VagaMilitar", fields: [militar_id], references: [id])
+  execucao  ExecucaoVaga?
 
   @@index([escala_guarnicao_id])
   @@index([militar_id])
@@ -268,4 +280,31 @@ model Feriado {
   tipo       FeriadoTipo @default(estadual)
   created_at DateTime    @default(now())
   updated_at DateTime    @updatedAt
+}
+
+enum ExecucaoStatus {
+  pendente
+  registrada
+  validada
+  rejeitada
+}
+
+enum SituacaoExecucao {
+  presente
+  falta
+  substituido
+  preenchido
+}
+
+model ExecucaoVaga {
+  id                   Int              @id @default(autoincrement())
+  vaga_id              Int              @unique
+  vaga                 Vaga             @relation(fields: [vaga_id], references: [id], onDelete: Cascade)
+  situacao             SituacaoExecucao
+  militar_executado_id Int?
+  militar_executado    User?            @relation("ExecucaoMilitar", fields: [militar_executado_id], references: [id])
+  do                   Boolean          @default(false)
+  observacoes          String?
+  created_at           DateTime         @default(now())
+  updated_at           DateTime         @updatedAt
 }
