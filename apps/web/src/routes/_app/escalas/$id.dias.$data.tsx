@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Group, Loader, Paper, SimpleGrid, Stack, Title, Alert } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import type { EscalaDiaDTO } from '@escalas/shared-types';
+import { putDiaSchema } from '@escalas/shared-schemas';
 import { escalasApi } from '../../../lib/api/escalas';
 import { useDiaDraft } from '../../../features/escalas/useDiaDraft';
 import { GuarnicaoCard } from '../../../components/GuarnicaoCard';
@@ -27,10 +28,24 @@ export function EditorDia({ escalaId, data }: { escalaId: number; data: string }
 function EditorDiaForm({ escalaId, data, diaInicial }: { escalaId: number; data: string; diaInicial: EscalaDiaDTO }) {
   const draft = useDiaDraft(diaInicial);
   const [conflito, setConflito] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const salvar = useMutation({
-    mutationFn: () => escalasApi.putDia(escalaId, data, draft.toPutInput()),
-    onSuccess: () => { setConflito(null); notifications.show({ message: 'Dia salvo.' }); },
+    mutationFn: () => {
+      const input = draft.toPutInput();
+      const result = putDiaSchema.safeParse(input);
+      if (!result.success) {
+        const msg = result.error.issues.map(i => i.message).join('; ');
+        return Promise.reject(new Error(`Campos obrigatórios inválidos: ${msg}`));
+      }
+      return escalasApi.putDia(escalaId, data, input);
+    },
+    onSuccess: () => {
+      setConflito(null);
+      notifications.show({ message: 'Dia salvo.' });
+      queryClient.invalidateQueries({ queryKey: ['dia', escalaId, data] });
+      queryClient.invalidateQueries({ queryKey: ['escala', escalaId] });
+    },
     onError: (e) => {
       const err = e as ApiError;
       if (err.status === 422) setConflito(err.message);
@@ -40,7 +55,11 @@ function EditorDiaForm({ escalaId, data, diaInicial }: { escalaId: number; data:
   });
   const publicar = useMutation({
     mutationFn: () => escalasApi.publicar(escalaId),
-    onSuccess: () => notifications.show({ message: 'Escala publicada.' }),
+    onSuccess: () => {
+      notifications.show({ message: 'Escala publicada.' });
+      queryClient.invalidateQueries({ queryKey: ['escala', escalaId] });
+      queryClient.invalidateQueries({ queryKey: ['escalas'] });
+    },
     onError: (e) => notifications.show({ color: 'red', message: (e as Error).message }),
   });
   return (

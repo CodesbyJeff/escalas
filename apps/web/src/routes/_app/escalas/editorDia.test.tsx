@@ -60,3 +60,39 @@ it('exibe mensagem de recarga ao salvar com conflito de versão (409)', async ()
   await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
   await waitFor(() => expect(screen.getByText(/a escala mudou\. recarregue\./i)).toBeInTheDocument());
 });
+
+it('salvar invalida cache: re-fetches dia após sucesso', async () => {
+  let getCalls = 0;
+  server.use(
+    http.get(`${BASE}/escalas/1/dias/2026-03-15`, () => {
+      getCalls++;
+      return HttpResponse.json({ success: true, message: 'ok', data: dia });
+    }),
+    http.put(`${BASE}/escalas/1/dias/2026-03-15`, () => HttpResponse.json({ success: true, message: 'ok', data: dia })),
+  );
+  renderWithProviders(<EditorDia escalaId={1} data="2026-03-15" />);
+  await screen.findByText(/quadro de escala/i);
+  const getsBefore = getCalls;
+  await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  await waitFor(() => expect(getCalls).toBeGreaterThan(getsBefore));
+});
+
+it('não chama PUT quando draft está inválido (campos obrigatórios)', async () => {
+  const diaInvalido = {
+    id: 2, data: '2026-03-15', observacoes: null,
+    guarnicoes: [{
+      id: 10, sigla: '', atividade: '', viatura_id: null,
+      turno_inicio: '08:00', turno_fim: '17:00', ordem: 0, vagas: [],
+    }],
+  };
+  let putCalled = false;
+  server.use(
+    http.get(`${BASE}/escalas/1/dias/2026-03-15`, () => HttpResponse.json({ success: true, message: 'ok', data: diaInvalido })),
+    http.put(`${BASE}/escalas/1/dias/2026-03-15`, () => { putCalled = true; return HttpResponse.json({ success: true, message: 'ok', data: diaInvalido }); }),
+  );
+  renderWithProviders(<EditorDia escalaId={1} data="2026-03-15" />);
+  await screen.findByText(/quadro de escala/i);
+  await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  await waitFor(() => expect(screen.getByText(/campos obrigatórios/i)).toBeInTheDocument());
+  expect(putCalled).toBe(false);
+});

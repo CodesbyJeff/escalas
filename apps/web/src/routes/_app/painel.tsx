@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader } from '@mantine/core';
 import dayjs from 'dayjs';
 import { escalasApi } from '../../lib/api/escalas';
+import { militaresApi } from '../../lib/api/militares';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { PainelView } from '../../features/painel/PainelView';
 
@@ -18,6 +19,15 @@ function PainelPage() {
     queryFn: () => escalasApi.getDia(escalaDoMes!.id, hoje.format('YYYY-MM-DD')),
     enabled: !!escalaDoMes,
   });
+  const { data: militares } = useQuery({
+    queryKey: ['militares', escalaDoMes?.id],
+    queryFn: () => militaresApi.listar(escalaDoMes!.id),
+    enabled: !!escalaDoMes,
+  });
+  const militarMap = new Map<number, string>(
+    (militares ?? []).map((m) => [m.id, [m.posto, m.nome_curto ?? m.nome].filter(Boolean).join(' ')])
+  );
+  const getMilitarNome = (id: number) => militarMap.get(id) ?? String(id);
   if (isLoading) return <Loader />;
-  return <PainelView nome={user?.nome ?? ''} dia={dia ?? null} />;
+  return <PainelView nome={user?.nome ?? ''} dia={dia ?? null} getMilitarNome={getMilitarNome} />;
 }

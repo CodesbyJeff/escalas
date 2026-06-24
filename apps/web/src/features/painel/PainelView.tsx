@@ -1,7 +1,7 @@
 import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import type { EscalaDiaDTO } from '@escalas/shared-types';
 
-export function PainelView({ nome, dia }: { nome: string; dia: EscalaDiaDTO | null }) {
+export function PainelView({ nome, dia, getMilitarNome }: { nome: string; dia: EscalaDiaDTO | null; getMilitarNome: (id: number) => string }) {
   return (
     <Stack>
       <Title order={3} c="cbmrn.7">Seja bem vindo!</Title>
@@ -15,7 +15,7 @@ export function PainelView({ nome, dia }: { nome: string; dia: EscalaDiaDTO | nu
               <Text fw={700}>{g.atividade}</Text>
               <Text size="sm" c="dimmed">{g.turno_inicio} – {g.turno_fim}</Text>
               {g.vagas.map((v) => (
-                <Text key={v.id} size="sm">{v.funcao} — {v.militar_id ?? 'VAGO'}</Text>
+                <Text key={v.id} size="sm">{v.funcao} — {v.militar_id != null ? getMilitarNome(v.militar_id) : 'VAGO'}</Text>
               ))}
             </Card>
           ))}

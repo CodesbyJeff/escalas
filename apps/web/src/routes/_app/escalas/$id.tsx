@@ -10,7 +10,7 @@ function DetalhePage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { data: escala, isLoading } = useQuery({
-    queryKey: ['escala', id], queryFn: () => escalasApi.detalhe(Number(id)),
+    queryKey: ['escala', Number(id)], queryFn: () => escalasApi.detalhe(Number(id)),
   });
   if (isLoading || !escala) return <Loader />;
   return (
