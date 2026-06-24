@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppPainelRouteImport } from './routes/_app/painel'
 import { Route as AppEscalasIndexRouteImport } from './routes/_app/escalas/index'
 import { Route as AppEscalasNovaRouteImport } from './routes/_app/escalas/nova'
 import { Route as AppEscalasIdRouteImport } from './routes/_app/escalas/$id'
@@ -29,6 +30,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPainelRoute = AppPainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEscalasIndexRoute = AppEscalasIndexRouteImport.update({
@@ -55,6 +61,7 @@ const AppEscalasIdDiasDataRoute = AppEscalasIdDiasDataRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/painel': typeof AppPainelRoute
   '/escalas/$id': typeof AppEscalasIdRouteWithChildren
   '/escalas/nova': typeof AppEscalasNovaRoute
   '/escalas/': typeof AppEscalasIndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/painel': typeof AppPainelRoute
   '/': typeof AppIndexRoute
   '/escalas/$id': typeof AppEscalasIdRouteWithChildren
   '/escalas/nova': typeof AppEscalasNovaRoute
@@ -72,6 +80,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/painel': typeof AppPainelRoute
   '/_app/': typeof AppIndexRoute
   '/_app/escalas/$id': typeof AppEscalasIdRouteWithChildren
   '/_app/escalas/nova': typeof AppEscalasNovaRoute
@@ -83,6 +92,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/painel'
     | '/escalas/$id'
     | '/escalas/nova'
     | '/escalas/'
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/painel'
     | '/'
     | '/escalas/$id'
     | '/escalas/nova'
@@ -99,6 +110,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/login'
+    | '/_app/painel'
     | '/_app/'
     | '/_app/escalas/$id'
     | '/_app/escalas/nova'
@@ -132,6 +144,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/painel': {
+      id: '/_app/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof AppPainelRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/escalas/': {
@@ -178,6 +197,7 @@ const AppEscalasIdRouteWithChildren = AppEscalasIdRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppPainelRoute: typeof AppPainelRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEscalasIdRoute: typeof AppEscalasIdRouteWithChildren
   AppEscalasNovaRoute: typeof AppEscalasNovaRoute
@@ -185,6 +205,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppPainelRoute: AppPainelRoute,
   AppIndexRoute: AppIndexRoute,
   AppEscalasIdRoute: AppEscalasIdRouteWithChildren,
   AppEscalasNovaRoute: AppEscalasNovaRoute,

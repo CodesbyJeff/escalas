@@ -7,5 +7,5 @@ export const Route = createFileRoute('/login')({ component: LoginPage });
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  return <LoginForm onSubmit={async (v) => { await login(v); await navigate({ to: '/painel' as any }); }} />;
+  return <LoginForm onSubmit={async (v) => { await login(v); await navigate({ to: '/painel' }); }} />;
 }
