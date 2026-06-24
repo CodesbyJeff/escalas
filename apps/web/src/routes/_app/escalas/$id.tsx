@@ -20,8 +20,7 @@ function DetalhePage() {
       <Modal opened onClose={() => navigate({ to: '/escalas' })} title="Selecione o dia" centered>
         <SeletorDeDia
           mes={escala.mes} ano={escala.ano}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onSelecionar={(data) => navigate({ to: '/escalas/$id/dias/$data', params: { id, data } } as any)}
+          onSelecionar={(data) => navigate({ to: '/escalas/$id/dias/$data', params: { id, data } })}
         />
       </Modal>
     </Stack>
