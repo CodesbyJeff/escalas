@@ -43,18 +43,13 @@ function EditorDiaForm({ escalaId, data, diaInicial }: { escalaId: number; data:
     onSuccess: () => notifications.show({ message: 'Escala publicada.' }),
     onError: (e) => notifications.show({ color: 'red', message: (e as Error).message }),
   });
-  const duplicar = useMutation({
-    mutationFn: (de: string) => escalasApi.duplicarDia(escalaId, data, de),
-    onSuccess: () => notifications.show({ message: 'Dia duplicado.' }),
-  });
-
   return (
     <Stack>
       <Group justify="space-between">
         <Title order={4}>Quadro de Escala — dia {data}</Title>
         <Group>
           <Button variant="default" onClick={() => draft.addGuarnicao()}>Adicionar Guarnição</Button>
-          <Button variant="default" disabled={duplicar.isPending} title="Em breve: duplicar de outro dia">Duplicar Dia</Button>
+          <Button variant="default" disabled title="Em breve: duplicar de outro dia">Duplicar Dia</Button>
           <Button onClick={() => salvar.mutate()} loading={salvar.isPending}>Salvar</Button>
           <Button color="cbmrn" onClick={() => publicar.mutate()} loading={publicar.isPending}>Publicar Escala</Button>
         </Group>
