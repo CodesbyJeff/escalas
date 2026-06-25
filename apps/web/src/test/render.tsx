@@ -19,7 +19,7 @@ export function renderWithProviders(ui: ReactNode) {
   const router = createTestRouter();
   function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <MantineProvider theme={theme}>
+      <MantineProvider theme={theme} env="test">
         <Notifications />
         <RouterContextProvider router={router as any}>
           <QueryClientProvider client={qc}>{children}</QueryClientProvider>
