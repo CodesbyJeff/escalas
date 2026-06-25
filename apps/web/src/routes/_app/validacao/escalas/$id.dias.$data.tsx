@@ -69,7 +69,7 @@ function GestorDiaView({ escalaId, data, dia, getMilitarNome }: {
       {dia.execucao_status === 'validada' && <Alert color="green">Dia validado{dia.validado_em ? ` em ${dia.validado_em.slice(0, 10)}` : ''}.</Alert>}
       {dia.execucao_status === 'pendente' && <Alert color="gray">Ainda não fechado pelo fiscal.</Alert>}
       <ExecucaoDiaView escalaId={escalaId} dia={dia} getMilitarNome={getMilitarNome} mode="validar" />
-      <Modal opened={rejeitarOpen} onClose={rejeitar.close} title="Rejeitar execução" centered>
+      <Modal opened={rejeitarOpen} onClose={() => { rejeitar.close(); setJustificativa(''); }} title="Rejeitar execução" centered>
         <Stack>
           <Textarea
             label="Justificativa"
