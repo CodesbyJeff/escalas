@@ -6,6 +6,7 @@ import { templateRoutes } from './template.routes.js';
 import { escalaRoutes } from './escala.routes.js';
 import { validacaoRoutes } from './validacao.routes.js';
 import { feriadoRoutes } from './feriado.routes.js';
+import { execucaoRoutes } from './execucao.routes.js';
 
 export const router = Router();
 
@@ -15,4 +16,5 @@ router.use('/templates', templateRoutes);
 router.use('/escalas', escalaRoutes);
 router.use('/validacoes', validacaoRoutes);
 router.use('/feriados', feriadoRoutes);
+router.use('/execucoes', execucaoRoutes);
 router.get('/', (_req, res) => ok(res, 'API online.', { name: 'escalas', version: 'v1' }));

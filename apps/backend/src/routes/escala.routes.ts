@@ -3,9 +3,10 @@ import { authMiddleware } from '../middlewares/auth.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { requireEscalaAccess } from '../middlewares/requireEscalaAccess.js';
 import { validate } from '../middlewares/validate.js';
-import { criarEscalaSchema, putDiaSchema, duplicarDiaSchema, validarEscalaSchema } from '@escalas/shared-schemas';
+import { criarEscalaSchema, putDiaSchema, duplicarDiaSchema, validarEscalaSchema, putExecucaoSchema, validarExecucaoSchema } from '@escalas/shared-schemas';
 import { escalaController } from '../controllers/escala.controller.js';
 import { validacaoController } from '../controllers/validacao.controller.js';
+import { execucaoController } from '../controllers/execucao.controller.js';
 
 export const escalaRoutes = Router();
 
@@ -38,3 +39,9 @@ escalaRoutes.get(
   requireEscalaAccess(['ESCALANTE', 'GESTOR']),
   escalaController.listarMilitares,
 );
+
+// Execução / fiscalização
+escalaRoutes.get('/:id/execucao/:data', requireEscalaAccess(['FISCAL', 'GESTOR']), execucaoController.getDia);
+escalaRoutes.put('/:id/execucao/:data', requireEscalaAccess(['FISCAL']), validate(putExecucaoSchema), execucaoController.salvar);
+escalaRoutes.post('/:id/execucao/:data/fechar', requireEscalaAccess(['FISCAL']), execucaoController.fechar);
+escalaRoutes.post('/:id/execucao/:data/validar', requireEscalaAccess(['GESTOR']), validate(validarExecucaoSchema), execucaoController.validar);
