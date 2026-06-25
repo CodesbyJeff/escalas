@@ -1,4 +1,4 @@
-export const ROLES = ['ESCALANTE', 'MILITAR', 'GESTOR'] as const;
+export const ROLES = ['ESCALANTE', 'MILITAR', 'GESTOR', 'FISCAL'] as const;
 export type Role = (typeof ROLES)[number];
 
 export interface AuthUser {
