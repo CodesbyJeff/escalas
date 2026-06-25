@@ -76,7 +76,7 @@ export const execucaoController = {
       const hoje = new Date().toISOString().slice(0, 10);
       const lista = await execucaoService.listarPendentesFiscal(lotacao_ids, hoje, prisma);
       ok(res, 'Execuções pendentes do fiscal.', lista);
-    } catch (e) { next(e); }
+    } catch (e) { handle(res, next, e); }
   },
 
   // GET /api/v1/execucoes/pendentes/gestor
@@ -92,6 +92,6 @@ export const execucaoController = {
       }
       const lista = await execucaoService.listarPendentesGestor(lotacao_ids, prisma);
       ok(res, 'Execuções pendentes do gestor.', lista);
-    } catch (e) { next(e); }
+    } catch (e) { handle(res, next, e); }
   },
 };
