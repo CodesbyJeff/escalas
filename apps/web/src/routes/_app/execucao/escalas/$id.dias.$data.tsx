@@ -81,7 +81,7 @@ function FiscalDiaForm({ escalaId, data, dia, getMilitarNome }: {
           </Group>
         )}
       </Group>
-      {!editavel && dia.execucao_status !== 'registrada' && (
+      {dia.execucao_status === 'validada' && (
         <Alert color="blue">Dia validado.</Alert>
       )}
       {erro && <Alert color="red" title="Não foi possível salvar">{erro}</Alert>}

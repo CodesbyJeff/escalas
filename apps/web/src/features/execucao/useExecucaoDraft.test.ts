@@ -1,8 +1,9 @@
 // apps/web/src/features/execucao/useExecucaoDraft.test.ts
 import { renderHook, act } from '@testing-library/react';
+import type { ExecucaoDiaDTO } from '@escalas/shared-types';
 import { useExecucaoDraft } from './useExecucaoDraft';
 
-const dia: any = {
+const dia: ExecucaoDiaDTO = {
   escala_id: 2, data: '2026-06-25', execucao_status: 'pendente', validado_em: null, justificativa: null,
   guarnicoes: [{
     id: 1, sigla: 'ABT-01', atividade: 'Incêndio', turno_inicio: '07:00', turno_fim: '19:00', ordem: 0,

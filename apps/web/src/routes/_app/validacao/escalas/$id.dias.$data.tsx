@@ -80,7 +80,7 @@ function GestorDiaView({ escalaId, data, dia, getMilitarNome }: {
             onChange={(e) => setJustificativa(e.currentTarget.value)}
           />
           <Group justify="flex-end">
-            <Button variant="default" onClick={rejeitar.close}>Cancelar</Button>
+            <Button variant="default" onClick={() => { rejeitar.close(); setJustificativa(''); }}>Cancelar</Button>
             <Button
               color="red"
               disabled={!justificativa.trim()}
