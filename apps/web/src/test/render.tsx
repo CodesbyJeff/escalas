@@ -17,12 +17,15 @@ function createTestRouter() {
 export function renderWithProviders(ui: ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createTestRouter();
-  return render(
-    <MantineProvider theme={theme}>
-      <Notifications />
-      <RouterContextProvider router={router as any}>
-        <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
-      </RouterContextProvider>
-    </MantineProvider>,
-  );
+  function Wrapper({ children }: { children: ReactNode }) {
+    return (
+      <MantineProvider theme={theme}>
+        <Notifications />
+        <RouterContextProvider router={router as any}>
+          <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+        </RouterContextProvider>
+      </MantineProvider>
+    );
+  }
+  return render(ui, { wrapper: Wrapper });
 }
