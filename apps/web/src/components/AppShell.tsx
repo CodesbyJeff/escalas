@@ -1,11 +1,21 @@
 import { AppShell, Burger, Group, NavLink, Text, ActionIcon, Avatar } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconLogout } from '@tabler/icons-react';
+import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconClipboardCheck, IconLogout } from '@tabler/icons-react';
 import { Link, Outlet } from '@tanstack/react-router';
 import { type ReactNode } from 'react';
+import type { AuthUser } from '@escalas/shared-types';
 
-export function AppShellNav({ nome, papel, onLogout, children }: {
-  nome: string; papel: string; onLogout: () => void; children?: ReactNode;
+export function navFlags(user: AuthUser | null): { canExecutar: boolean; canValidar: boolean } {
+  const roles = user?.roles ?? [];
+  const sa = user?.is_super_admin ?? false;
+  return {
+    canExecutar: sa || roles.some((r) => r.role === 'FISCAL'),
+    canValidar: sa || roles.some((r) => r.role === 'GESTOR'),
+  };
+}
+
+export function AppShellNav({ nome, papel, canExecutar, canValidar, onLogout, children }: {
+  nome: string; papel: string; canExecutar: boolean; canValidar: boolean; onLogout: () => void; children?: ReactNode;
 }) {
   const [opened, { toggle }] = useDisclosure();
   return (
@@ -27,7 +37,12 @@ export function AppShellNav({ nome, papel, onLogout, children }: {
           <NavLink component={Link} to="/escalas" label="Listar" c="white" />
           <NavLink component={Link} to="/escalas/nova" label="Nova Escala" c="white" />
         </NavLink>
-        <NavLink label="Validação" c="white" leftSection={<IconShieldCheck size={18} />} disabled />
+        {canExecutar && (
+          <NavLink component={Link} to="/execucao" label="Execução" c="white" leftSection={<IconClipboardCheck size={18} />} />
+        )}
+        {canValidar && (
+          <NavLink component={Link} to="/validacao" label="Validação" c="white" leftSection={<IconShieldCheck size={18} />} />
+        )}
       </AppShell.Navbar>
       <AppShell.Main>{children ?? <Outlet />}</AppShell.Main>
     </AppShell>
