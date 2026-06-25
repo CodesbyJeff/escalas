@@ -229,7 +229,7 @@ describe('execucaoService', () => {
   });
 
   it('listarPendentesFiscal não inclui dias de outra lotação', async () => {
-    const c = await cenario();
+    await cenario();
     const lista = await svc.listarPendentesFiscal([9999], '2999-12-31', testPrisma);
     expect(lista.some((x) => x.data === '2026-07-01')).toBe(false);
   });

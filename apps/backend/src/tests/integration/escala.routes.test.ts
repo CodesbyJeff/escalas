@@ -186,7 +186,7 @@ describe('GET /api/v1/escalas/:id/militares', () => {
   }
 
   it('lista militares da lotação da escala (ESCALANTE) e filtra por busca', async () => {
-    const { escalante, anaPaula, bruno, escalaId, token } = await setupMilitares(890);
+    const { anaPaula, bruno, escalaId, token } = await setupMilitares(890);
 
     // Sem filtro: deve retornar todos militares da lotação
     const resAll = await request(buildApp())
