@@ -11,8 +11,8 @@ async function cenario() {
   const militar = await testPrisma.user.create({ data: { cpf: '80000000001', nome: 'Militar Teste', last_sync_at: new Date() } });
   const outro = await testPrisma.user.create({ data: { cpf: '80000000002', nome: 'Outro', last_sync_at: new Date() } });
 
-  async function escalaComVaga(status: string, dataISO: string, militarId: number | null) {
-    const esc = await testPrisma.escala.create({ data: { lotacao_id: lot.id, mes: Number(dataISO.slice(5, 7)), ano: Number(dataISO.slice(0, 4)), status, criado_por_id: militar.id, publicado_em: new Date() } as any });
+  async function escalaComVaga(status: 'publicada' | 'rascunho' | 'em_validacao' | 'aprovada' | 'rejeitada', dataISO: string, militarId: number | null) {
+    const esc = await testPrisma.escala.create({ data: { lotacao_id: lot.id, mes: Number(dataISO.slice(5, 7)), ano: Number(dataISO.slice(0, 4)), status, criado_por_id: militar.id, publicado_em: new Date() } });
     const dia = await testPrisma.escalaDia.create({ data: { escala_id: esc.id, data: new Date(`${dataISO}T00:00:00.000Z`) } });
     const g = await testPrisma.escalaGuarnicao.create({ data: { escala_dia_id: dia.id, sigla: 'ABT-01', atividade: 'Incêndio', turno_inicio: '07:00', turno_fim: '19:00', ordem: 0 } });
     await testPrisma.vaga.create({ data: { escala_guarnicao_id: g.id, funcao: 'Motorista', militar_id: militarId, turno_inicio: '07:00', turno_fim: '19:00' } });

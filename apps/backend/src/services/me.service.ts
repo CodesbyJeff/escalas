@@ -1,8 +1,8 @@
 // apps/backend/src/services/me.service.ts
-import { type PrismaClient } from '@prisma/client';
+import { type PrismaClient, type EscalaStatus } from '@prisma/client';
 import type { MeuServicoDTO } from '@escalas/shared-types';
 
-const VISIVEIS = ['publicada', 'em_validacao', 'aprovada'] as const;
+const VISIVEIS: EscalaStatus[] = ['publicada', 'em_validacao', 'aprovada'];
 
 function ymd(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -21,7 +21,7 @@ export const meService = {
         guarnicao: {
           dia: {
             data: { gte: from, lte: to },
-            escala: { status: { in: VISIVEIS as unknown as string[] } },
+            escala: { status: { in: VISIVEIS } },
           },
         },
       },
