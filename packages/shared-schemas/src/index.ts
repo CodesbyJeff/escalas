@@ -5,3 +5,4 @@ export * from './escala.schemas.js';
 export * from './validacao.schemas.js';
 export * from './feriado.schemas.js';
 export * from './execucao.schemas.js';
+export * from './me.schemas.js';
