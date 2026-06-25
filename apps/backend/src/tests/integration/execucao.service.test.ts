@@ -133,6 +133,29 @@ describe('execucaoService', () => {
     ).rejects.toMatchObject({ status: 422 });
   });
 
+  // Fix 1: salvar em dia com status "registrada" deve lançar ConflictError (409)
+  it('salvar 409 quando dia já está "registrada"', async () => {
+    const c = await cenario();
+    await svc.salvar(
+      c.escala.id,
+      '2026-07-01',
+      { vagas: [{ vaga_id: c.vagaComMilitar.id, situacao: 'falta', militar_executado_id: null, do: false }] },
+      c.fiscal.id,
+      testPrisma,
+    );
+    await svc.fechar(c.escala.id, '2026-07-01', c.fiscal.id, testPrisma);
+    // Dia agora está "registrada"; nova tentativa de salvar deve ser bloqueada
+    await expect(
+      svc.salvar(
+        c.escala.id,
+        '2026-07-01',
+        { vagas: [{ vaga_id: c.vagaComMilitar.id, situacao: 'presente', militar_executado_id: c.previsto.id, do: false }] },
+        c.fiscal.id,
+        testPrisma,
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
   it('fechar exige situacao p/ toda vaga com militar previsto; vai p/ registrada', async () => {
     const c = await cenario();
     // sem registrar nada → fechar deve falhar (vaga com militar sem execução)

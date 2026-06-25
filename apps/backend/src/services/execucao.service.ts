@@ -77,8 +77,9 @@ export const execucaoService = {
     prisma: PrismaClient,
   ): Promise<ExecucaoDiaDTO> {
     const dia = await carregarDia(escala_id, data, prisma);
-    if (dia.execucao_status === 'validada') {
-      throw new ConflictError('Dia já validado; não pode editar.');
+    // Fix 1: bloquear edição quando fiscal já fechou (registrada) ou gestor já validou (validada)
+    if (dia.execucao_status === 'registrada' || dia.execucao_status === 'validada') {
+      throw new ConflictError('Dia já fechado para validação; não pode editar.');
     }
     const vagaIds = new Set(dia.guarnicoes.flatMap((g) => g.vagas.map((v) => v.id)));
     for (const ev of input.vagas) {
@@ -124,7 +125,8 @@ export const execucaoService = {
     prisma: PrismaClient,
   ): Promise<ExecucaoDiaDTO> {
     const dia = await carregarDia(escala_id, data, prisma);
-    if (dia.execucao_status === 'registrada' || dia.execucao_status === 'validada') {
+    // Fix 3: allowlist positiva — só permite fechar quando pendente ou rejeitada
+    if (dia.execucao_status !== 'pendente' && dia.execucao_status !== 'rejeitada') {
       throw new ConflictError('Dia não está aberto para fechamento.');
     }
     // toda vaga COM militar previsto precisa de execução; VAGO sem ocupação é dispensada

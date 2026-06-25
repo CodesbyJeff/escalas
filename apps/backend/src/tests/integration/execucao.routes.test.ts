@@ -185,14 +185,57 @@ describe('PUT /api/v1/escalas/:id/execucao/:data', () => {
       });
     expect(r.status).toBe(422);
   });
+
+  // Fix 1: salvar em dia já "registrada" deve retornar 409
+  it('FISCAL tenta editar dia já "registrada" → 409', async () => {
+    const c = await cenario(813);
+    // Salva e fecha o dia para deixá-lo em "registrada"
+    await request(buildApp())
+      .put(`/api/v1/escalas/${c.escala.id}/execucao/2026-07-01`)
+      .set('authorization', `Bearer ${c.tokenFiscal}`)
+      .send({
+        vagas: [{ vaga_id: c.vagaComMilitar.id, situacao: 'falta', militar_executado_id: null, do: false }],
+      });
+    await request(buildApp())
+      .post(`/api/v1/escalas/${c.escala.id}/execucao/2026-07-01/fechar`)
+      .set('authorization', `Bearer ${c.tokenFiscal}`);
+    // Agora tenta editar novamente com o dia em status "registrada" → deve ser bloqueado
+    const r = await request(buildApp())
+      .put(`/api/v1/escalas/${c.escala.id}/execucao/2026-07-01`)
+      .set('authorization', `Bearer ${c.tokenFiscal}`)
+      .send({
+        vagas: [{ vaga_id: c.vagaComMilitar.id, situacao: 'presente', militar_executado_id: c.previsto.id, do: false }],
+      });
+    expect(r.status).toBe(409);
+  });
+
+  // Fix 2: campo `do` persiste e retorna no getDia (round-trip)
+  it('do: true persiste e retorna no getDia', async () => {
+    const c = await cenario(814);
+    const putRes = await request(buildApp())
+      .put(`/api/v1/escalas/${c.escala.id}/execucao/2026-07-01`)
+      .set('authorization', `Bearer ${c.tokenFiscal}`)
+      .send({
+        vagas: [{ vaga_id: c.vagaComMilitar.id, situacao: 'presente', militar_executado_id: c.previsto.id, do: true }],
+      });
+    expect(putRes.status).toBe(200);
+    const getRes = await request(buildApp())
+      .get(`/api/v1/escalas/${c.escala.id}/execucao/2026-07-01`)
+      .set('authorization', `Bearer ${c.tokenFiscal}`);
+    expect(getRes.status).toBe(200);
+    const vagas = getRes.body.data.guarnicoes.flatMap((g: { vagas: unknown[] }) => g.vagas);
+    const vaga = vagas.find((v: { id: number }) => v.id === c.vagaComMilitar.id) as { execucao: { do: boolean } | null };
+    expect(vaga?.execucao?.do).toBe(true);
+  });
 });
 
 // ─── POST /:id/execucao/:data/fechar ────────────────────────────────────────
 
 describe('POST /api/v1/escalas/:id/execucao/:data/fechar', () => {
-  it('FISCAL com todas previstas registradas → 200 e execucao_status="registrada"', async () => {
+  it('FISCAL com todas previstas registradas → 200 e execucao_status="registrada" (vaga VAGO dispensada)', async () => {
     const c = await cenario(820);
-    // Primeiro salva a situação da vaga com militar
+    // cenario() cria vagaComMilitar (previsto) e vagaVago (militar_id=null).
+    // Apenas a vaga com militar precisa de execução; a vagaVago (VAGO) deve ser ignorada.
     await request(buildApp())
       .put(`/api/v1/escalas/${c.escala.id}/execucao/2026-07-01`)
       .set('authorization', `Bearer ${c.tokenFiscal}`)
@@ -202,6 +245,8 @@ describe('POST /api/v1/escalas/:id/execucao/:data/fechar', () => {
     const r = await request(buildApp())
       .post(`/api/v1/escalas/${c.escala.id}/execucao/2026-07-01/fechar`)
       .set('authorization', `Bearer ${c.tokenFiscal}`);
+    // Fix 4: prova explícita que o cenário tem vagaVago sem execução e ainda fecha com 200
+    expect(c.vagaVago.militar_id).toBeNull(); // garantia: vagaVago é realmente VAGO
     expect(r.status).toBe(200);
     expect(r.body.data.execucao_status).toBe('registrada');
   });
@@ -292,6 +337,25 @@ describe('GET /api/v1/execucoes/pendentes/fiscal', () => {
     // não deve ver lotação 841
     expect(lotacaoIds.includes(b.lotacao.id)).toBe(false);
   });
+
+  // Fix 5: usuário sem papel FISCAL → 403
+  it('usuário sem papel FISCAL → 403', async () => {
+    const c = await cenario(842);
+    // tokenOutro pertence ao user "SemPapel" (sem UserRole)
+    const r = await request(buildApp())
+      .get('/api/v1/execucoes/pendentes/fiscal')
+      .set('authorization', `Bearer ${c.tokenOutro}`);
+    expect(r.status).toBe(403);
+  });
+
+  // Fix 5: GESTOR tentando acessar rota de FISCAL → 403
+  it('GESTOR tentando acessar pendentes/fiscal → 403', async () => {
+    const c = await cenario(843);
+    const r = await request(buildApp())
+      .get('/api/v1/execucoes/pendentes/fiscal')
+      .set('authorization', `Bearer ${c.tokenGestor}`);
+    expect(r.status).toBe(403);
+  });
 });
 
 // ─── GET /execucoes/pendentes/gestor ────────────────────────────────────────
@@ -321,5 +385,24 @@ describe('GET /api/v1/execucoes/pendentes/gestor', () => {
     const lotacaoIds = r.body.data.map((x: { lotacao_id: number }) => x.lotacao_id);
     expect(lotacaoIds.every((id: number) => id === c.lotacao.id)).toBe(true);
     expect(lotacaoIds.includes(outra.lotacao.id)).toBe(false);
+  });
+
+  // Fix 5: usuário sem papel GESTOR → 403
+  it('usuário sem papel GESTOR → 403', async () => {
+    const c = await cenario(852);
+    // tokenOutro pertence ao user "SemPapel" (sem UserRole)
+    const r = await request(buildApp())
+      .get('/api/v1/execucoes/pendentes/gestor')
+      .set('authorization', `Bearer ${c.tokenOutro}`);
+    expect(r.status).toBe(403);
+  });
+
+  // Fix 5: FISCAL tentando acessar rota de GESTOR → 403
+  it('FISCAL tentando acessar pendentes/gestor → 403', async () => {
+    const c = await cenario(853);
+    const r = await request(buildApp())
+      .get('/api/v1/execucoes/pendentes/gestor')
+      .set('authorization', `Bearer ${c.tokenFiscal}`);
+    expect(r.status).toBe(403);
   });
 });
