@@ -36,4 +36,12 @@ describe('AppShellNav gating', () => {
     );
     expect(screen.queryByText('Execução')).not.toBeInTheDocument();
   });
+  it('mostra "Aprovação de Escalas" quando canValidar', () => {
+    renderWithProviders(<AppShellNav nome="A" papel="Administrador" canExecutar={false} canValidar onLogout={() => {}} />);
+    expect(screen.getByText('Aprovação de Escalas')).toBeInTheDocument();
+  });
+  it('esconde "Aprovação de Escalas" quando não canValidar', () => {
+    renderWithProviders(<AppShellNav nome="A" papel="x" canExecutar={false} canValidar={false} onLogout={() => {}} />);
+    expect(screen.queryByText('Aprovação de Escalas')).not.toBeInTheDocument();
+  });
 });

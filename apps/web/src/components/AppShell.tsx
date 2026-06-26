@@ -1,6 +1,6 @@
 import { AppShell, Burger, Group, NavLink, Text, ActionIcon, Avatar } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconClipboardCheck, IconLogout } from '@tabler/icons-react';
+import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconClipboardCheck, IconLogout, IconGavel } from '@tabler/icons-react';
 import { Link, Outlet } from '@tanstack/react-router';
 import { type ReactNode } from 'react';
 import type { AuthUser } from '@escalas/shared-types';
@@ -42,6 +42,9 @@ export function AppShellNav({ nome, papel, canExecutar, canValidar, onLogout, ch
         )}
         {canValidar && (
           <NavLink component={Link} to="/validacao" label="Validação" c="white" leftSection={<IconShieldCheck size={18} />} />
+        )}
+        {canValidar && (
+          <NavLink component={Link} to="/aprovacao" label="Aprovação de Escalas" c="white" leftSection={<IconGavel size={18} />} />
         )}
       </AppShell.Navbar>
       <AppShell.Main>{children ?? <Outlet />}</AppShell.Main>
