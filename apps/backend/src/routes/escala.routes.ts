@@ -7,6 +7,7 @@ import { criarEscalaSchema, putDiaSchema, duplicarDiaSchema, validarEscalaSchema
 import { escalaController } from '../controllers/escala.controller.js';
 import { validacaoController } from '../controllers/validacao.controller.js';
 import { execucaoController } from '../controllers/execucao.controller.js';
+import { resumoServicoController } from '../controllers/resumoServico.controller.js';
 
 export const escalaRoutes = Router();
 
@@ -39,6 +40,8 @@ escalaRoutes.get(
   requireEscalaAccess(['ESCALANTE', 'GESTOR']),
   escalaController.listarMilitares,
 );
+
+escalaRoutes.get('/:id/resumo-servicos', requireEscalaAccess(['ESCALANTE', 'GESTOR']), resumoServicoController.resumo);
 
 // Execução / fiscalização
 escalaRoutes.get('/:id/execucao/:data', requireEscalaAccess(['FISCAL', 'GESTOR']), execucaoController.getDia);
