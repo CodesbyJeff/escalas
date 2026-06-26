@@ -41,3 +41,16 @@ export interface ConflitoTurno {
   militar_id: number;
   vaga_ids: number[];
 }
+
+export interface EscalaMesDiaDTO {
+  data: string; // YYYY-MM-DD
+  vagas_total: number;
+  vagas_preenchidas: number;
+}
+export interface EscalaMesDTO {
+  id: number;
+  mes: number;
+  ano: number;
+  status: EscalaStatusDTO;
+  dias: EscalaMesDiaDTO[];
+}
