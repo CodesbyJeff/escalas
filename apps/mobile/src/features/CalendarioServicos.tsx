@@ -16,7 +16,7 @@ export function CalendarioServicos({ servicos }: { servicos: MeuServicoDTO[] }) 
   }, [servicos, sel]);
   return (
     <View style={{ gap: 12 }}>
-      <Calendar markedDates={marks} onDayPress={(d) => setSel(d.dateString)} theme={{ todayTextColor: '#b3001b' }} />
+      <Calendar markedDates={marks} onDayPress={(d: { dateString: string }) => setSel(d.dateString)} theme={{ todayTextColor: '#b3001b' }} />
       {sel && (
         <View style={{ paddingHorizontal: 16 }}>
           <Text style={{ fontWeight: '700', marginBottom: 8 }}>{sel}</Text>
