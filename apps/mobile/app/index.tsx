@@ -1,13 +1,8 @@
-import { View, Text } from 'react-native';
-import type { AuthUser } from '@escalas/shared-types';
-
-// Type check only — AuthUser from @escalas/shared-types resolves via tsconfig paths
-type _Check = AuthUser;
-
+import { Redirect } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
+import { useAuth } from '../src/auth/AuthContext';
 export default function Index() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Escalas CBMRN — Mobile (placeholder)</Text>
-    </View>
-  );
+  const { user, loading } = useAuth();
+  if (loading) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator /></View>;
+  return <Redirect href={user ? '/(tabs)' : '/login'} />;
 }
