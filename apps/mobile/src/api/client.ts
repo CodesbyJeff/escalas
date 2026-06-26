@@ -12,7 +12,7 @@ async function refresh(): Promise<boolean> {
   const res = await fetch(`${BASE}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token }) });
   if (!res.ok) return false;
   const body = await res.json();
-  if (!body.success) return false;
+  if (!body.success || !body.data?.token) return false;
   await setToken(body.data.token);
   return true;
 }

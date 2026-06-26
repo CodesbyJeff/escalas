@@ -43,4 +43,26 @@ describe('meService.listarMeusServicos', () => {
     const r = await meService.listarMeusServicos(militar.id, D('2026-08-01'), D('2026-08-31'), testPrisma);
     expect(r).toHaveLength(0);
   });
+
+  it('inclui publicada/em_validacao/aprovada e exclui rascunho/rejeitada (mesma data)', async () => {
+    const militar = await testPrisma.user.create({ data: { cpf: '82000000001', nome: 'M Status', last_sync_at: new Date() } });
+    // uma escala por status, cada uma em sua lotação (evita o unique [lotacao_id, mes, ano]), todas no mesmo dia
+    const statuses = [
+      { id: 821, status: 'publicada', vem: true },
+      { id: 822, status: 'em_validacao', vem: true },
+      { id: 823, status: 'aprovada', vem: true },
+      { id: 824, status: 'rascunho', vem: false },
+      { id: 825, status: 'rejeitada', vem: false },
+    ] as const;
+    for (const s of statuses) {
+      const lot = await testPrisma.lotacao.create({ data: { id: s.id, sigla: `S${s.id}`, nome: `Lot ${s.id}`, nivel: 3, operacional: true } });
+      const esc = await testPrisma.escala.create({ data: { lotacao_id: lot.id, mes: 7, ano: 2026, status: s.status, criado_por_id: militar.id, publicado_em: new Date() } });
+      const dia = await testPrisma.escalaDia.create({ data: { escala_id: esc.id, data: D('2026-07-20') } });
+      const g = await testPrisma.escalaGuarnicao.create({ data: { escala_dia_id: dia.id, sigla: 'G', atividade: 'A', turno_inicio: '07:00', turno_fim: '19:00', ordem: 0 } });
+      await testPrisma.vaga.create({ data: { escala_guarnicao_id: g.id, funcao: 'F', militar_id: militar.id, turno_inicio: '07:00', turno_fim: '19:00' } });
+    }
+    const r = await meService.listarMeusServicos(militar.id, D('2026-07-01'), D('2026-07-31'), testPrisma);
+    const siglas = r.map((s) => s.lotacao.sigla).sort();
+    expect(siglas).toEqual(['S821', 'S822', 'S823']); // publicada, em_validacao, aprovada
+  });
 });
