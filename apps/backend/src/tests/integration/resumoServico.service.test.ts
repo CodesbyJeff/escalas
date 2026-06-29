@@ -41,4 +41,18 @@ describe('resumoServicoService.calcular', () => {
     expect(r.map((x) => x.nome)).toEqual(['Alfa', 'Bravo']);
     expect(r.find((x) => x.nome === 'Bravo')!.total).toBe(1);
   });
+
+  it('feriado facultativo nacional (Corpus Christi, quinta) conta como fim_semana_feriado', async () => {
+    // Decisão intencional: facultativos nacionais (Carnaval/Corpus Christi) contam como feriado.
+    const lot = await testPrisma.lotacao.create({ data: { id: 831, sigla: 'L831', nome: 'Lot 831', nivel: 3, operacional: true } });
+    const m = await testPrisma.user.create({ data: { cpf: '83100000001', nome: 'Charlie', posto: 'SD', last_sync_at: new Date() } });
+    const escala = await testPrisma.escala.create({ data: { lotacao_id: lot.id, mes: 6, ano: 2026, status: 'em_validacao', criado_por_id: m.id, publicado_em: new Date() } });
+    const dia = await testPrisma.escalaDia.create({ data: { escala_id: escala.id, data: new Date('2026-06-04T00:00:00.000Z') } }); // Corpus Christi 2026 (quinta)
+    const g = await testPrisma.escalaGuarnicao.create({ data: { escala_dia_id: dia.id, sigla: 'G', atividade: 'A', turno_inicio: '07:00', turno_fim: '19:00', ordem: 0 } });
+    await testPrisma.vaga.create({ data: { escala_guarnicao_id: g.id, funcao: 'F', militar_id: m.id, turno_inicio: '07:00', turno_fim: '19:00' } });
+    const r = await resumoServicoService.calcular(escala.id, testPrisma);
+    expect(r[0]!.total).toBe(1);
+    expect(r[0]!.fim_semana_feriado).toBe(1);
+    expect(r[0]!.semana).toBe(0);
+  });
 });

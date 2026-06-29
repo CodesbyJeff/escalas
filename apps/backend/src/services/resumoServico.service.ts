@@ -13,6 +13,10 @@ export const resumoServicoService = {
     if (!escala) throw new NotFoundError('Escala não encontrada.');
 
     // Conjunto de feriados do mês: nacionais (feriadosBrasil) + tabela Feriado.
+    // Decisão intencional: os facultativos nacionais (Carnaval, Corpus Christi) TAMBÉM
+    // contam como fim_de_semana_feriado — são dias de demanda operacional pesada para o
+    // CBM, equivalentes a feriado para fins de carga de serviço. Para contar só feriados
+    // obrigatórios, filtrar por `f.tipo === 'nacional'` aqui.
     const inicio = new Date(Date.UTC(escala.ano, escala.mes - 1, 1));
     const fim = new Date(Date.UTC(escala.ano, escala.mes, 0)); // último dia do mês
     const feriadoSet = new Set<string>(feriadosBrasil(escala.ano).map((f) => ymd(f.data)));
