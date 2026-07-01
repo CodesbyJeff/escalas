@@ -11,7 +11,7 @@ async function escalaDe(lotId: number) {
   const dono = await testPrisma.user.create({ data: { cpf: `100${lotId}`, nome: 'Esc', last_sync_at: new Date() } });
   await testPrisma.userRole.create({ data: { user_id: dono.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: dono.id } });
   await testPrisma.templateLotacao.create({
-    data: { lotacao_id: lot.id, criado_por_id: dono.id, guarnicoes: { create: [{ sigla: 'A', atividade: 'i', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'c', quantidade_sugerida: 1 }] } }] } },
+    data: { lotacao_id: lot.id, nome: 'Padrão', criado_por_id: dono.id, guarnicoes: { create: [{ sigla: 'A', atividade: 'i', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'c', quantidade_sugerida: 1 }] } }] } },
   });
   const escala = await testPrisma.escala.create({ data: { lotacao_id: lot.id, mes: 4, ano: 2026, criado_por_id: dono.id } });
   return { lot, dono, escala };

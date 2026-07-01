@@ -14,6 +14,7 @@ async function seedTemplate(lotacao_id: number, criado_por_id: number) {
   return testPrisma.templateLotacao.create({
     data: {
       lotacao_id,
+      nome: 'Padrão',
       criado_por_id,
       guarnicoes: {
         create: [{
@@ -33,10 +34,10 @@ describe('escalaService.criar', () => {
   it('gera dias do mês × template com vagas vazias', async () => {
     const lot = await seedLotacao();
     const user = await seedUser('20202020202');
-    await seedTemplate(lot.id, user.id);
+    const tmpl = await seedTemplate(lot.id, user.id);
 
     const escala = await escalaService.criar(
-      { lotacao_id: lot.id, mes: 4, ano: 2026 },
+      { lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id },
       user.id,
       testPrisma,
     );
@@ -53,29 +54,29 @@ describe('escalaService.criar', () => {
     expect(umaVaga!.turno_inicio).toBe('07:00');
   });
 
-  it('bloqueia (409) se lotação não tem template', async () => {
+  it('bloqueia (409) se template_id é inválido ou não pertence à lotação', async () => {
     const lot = await seedLotacao(801);
     const user = await seedUser('30303030303');
     await expect(
-      escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma),
+      escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: 999999 }, user.id, testPrisma),
     ).rejects.toMatchObject({ status: 409 });
   });
 
   it('bloqueia (409) escala duplicada no mesmo mês/ano', async () => {
     const lot = await seedLotacao(802);
     const user = await seedUser('40404040404');
-    await seedTemplate(lot.id, user.id);
-    await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     await expect(
-      escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma),
+      escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma),
     ).rejects.toMatchObject({ status: 409 });
   });
 
   it('registra AuditLog de criação', async () => {
     const lot = await seedLotacao(803);
     const user = await seedUser('50505050505');
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     const logs = await testPrisma.auditLog.findMany({ where: { entidade: 'Escala', entidade_id: escala.id, acao: 'criar' } });
     expect(logs).toHaveLength(1);
   });
@@ -85,8 +86,8 @@ describe('escalaService.listar / getDetalhe / getMes', () => {
   async function escalaPronta(lotId: number, cpf: string) {
     const lot = await seedLotacao(lotId);
     const user = await seedUser(cpf);
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     return { lot, user, escala };
   }
 
@@ -123,8 +124,8 @@ describe('escalaService.putDia', () => {
   async function escalaComDia(lotId: number, cpf: string) {
     const lot = await seedLotacao(lotId);
     const user = await seedUser(cpf);
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     const militar = await seedUser(`9${cpf}`.slice(0, 11));
     return { lot, user, escala, militar, data: '2026-04-01' };
   }
@@ -183,8 +184,8 @@ describe('escalaService.duplicarDia', () => {
   it('copia guarnições/vagas de um dia para outro', async () => {
     const lot = await seedLotacao(830);
     const user = await seedUser('70707070707');
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     const militar = await seedUser('80808080808');
 
     await escalaService.putDia(escala.id, '2026-04-01', {
@@ -203,8 +204,8 @@ describe('escalaService.duplicarDia', () => {
   it('404 se o dia de origem não existe', async () => {
     const lot = await seedLotacao(831);
     const user = await seedUser('90909090909');
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     await expect(
       escalaService.duplicarDia(escala.id, '2026-04-02', '2026-05-01', user.id, testPrisma),
     ).rejects.toMatchObject({ status: 404 });
@@ -215,8 +216,8 @@ describe('escalaService.publicar / versões', () => {
   async function pronta(lotId: number, cpf: string) {
     const lot = await seedLotacao(lotId);
     const user = await seedUser(cpf);
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     return { user, escala };
   }
 
@@ -257,8 +258,8 @@ describe('escalaService.deletar', () => {
   it('deleta escala em rascunho', async () => {
     const lot = await seedLotacao(850);
     const user = await seedUser('55655655655');
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     await escalaService.deletar(escala.id, user.id, testPrisma);
     expect(await testPrisma.escala.findUnique({ where: { id: escala.id } })).toBeNull();
   });
@@ -266,11 +267,26 @@ describe('escalaService.deletar', () => {
   it('409 ao deletar escala já publicada', async () => {
     const lot = await seedLotacao(851);
     const user = await seedUser('66766766766');
-    await seedTemplate(lot.id, user.id);
-    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026 }, user.id, testPrisma);
+    const tmpl = await seedTemplate(lot.id, user.id);
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id }, user.id, testPrisma);
     await escalaService.publicar(escala.id, user.id, testPrisma);
     await expect(
       escalaService.deletar(escala.id, user.id, testPrisma),
     ).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('escalaService.criar — aplica layout escolhido', () => {
+  it('cria escala aplicando o layout escolhido e grava template_id', async () => {
+    const lot = await testPrisma.lotacao.create({ data: { id: 950, sigla: 'L950', nome: 'L', nivel: 3, operacional: true } });
+    const u = await testPrisma.user.create({ data: { cpf: '95000000001', nome: 'E', last_sync_at: new Date() } });
+    const layout = await testPrisma.templateLotacao.create({ data: { lotacao_id: lot.id, nome: 'Padrão', criado_por_id: u.id,
+      guarnicoes: { create: [{ sigla: 'ABT', atividade: 'Inc', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0,
+        vagas_sugeridas: { create: [{ funcao: 'Cmt', quantidade_sugerida: 1 }] } }] } } });
+    const esc = await escalaService.criar({ lotacao_id: lot.id, mes: 8, ano: 2026, template_id: layout.id }, u.id, testPrisma);
+    expect(esc.template_id).toBe(layout.id);
+    const dia = await testPrisma.escalaDia.findFirst({ where: { escala_id: esc.id }, include: { guarnicoes: { include: { vagas: true } } } });
+    expect(dia!.guarnicoes[0]!.sigla).toBe('ABT');
+    expect(dia!.guarnicoes[0]!.vagas).toHaveLength(1);
   });
 });

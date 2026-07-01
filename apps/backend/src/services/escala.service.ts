@@ -8,11 +8,11 @@ import { auditService } from './audit.service.js';
 export const escalaService = {
   async criar(input: CriarEscalaInput, user_id: number, prisma: PrismaClient) {
     const template = await prisma.templateLotacao.findUnique({
-      where: { lotacao_id: input.lotacao_id },
+      where: { id: input.template_id },
       include: { guarnicoes: { include: { vagas_sugeridas: true } } },
     });
-    if (!template) {
-      throw new ConflictError('Configure o template da lotação antes de criar a escala.');
+    if (!template || template.lotacao_id !== input.lotacao_id) {
+      throw new ConflictError('Layout inválido para esta lotação.');
     }
 
     const existente = await prisma.escala.findUnique({
@@ -32,6 +32,7 @@ export const escalaService = {
           mes: input.mes,
           ano: input.ano,
           criado_por_id: user_id,
+          template_id: input.template_id,
           dias: {
             create: dias.map((data) => ({
               data,

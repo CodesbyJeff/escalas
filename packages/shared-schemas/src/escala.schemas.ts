@@ -6,6 +6,7 @@ export const criarEscalaSchema = z.object({
   lotacao_id: z.number().int().positive(),
   mes: z.number().int().min(1).max(12),
   ano: z.number().int().min(2024).max(2100),
+  template_id: z.number().int().positive(),
 });
 
 export const vagaInputSchema = z.object({

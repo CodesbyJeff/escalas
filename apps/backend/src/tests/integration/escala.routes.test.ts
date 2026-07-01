@@ -14,39 +14,39 @@ async function setup(lotId: number) {
   });
   const esc = await testPrisma.user.create({ data: { cpf: `100${lotId}`, nome: 'Esc', last_sync_at: new Date() } });
   await testPrisma.userRole.create({ data: { user_id: esc.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: esc.id } });
-  await testPrisma.templateLotacao.create({
-    data: { lotacao_id: lot.id, criado_por_id: esc.id, guarnicoes: { create: [{ sigla: 'ABT-01', atividade: 'incendio', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'comandante', quantidade_sugerida: 1 }] } }] } },
+  const tmpl = await testPrisma.templateLotacao.create({
+    data: { lotacao_id: lot.id, nome: 'Padrão', criado_por_id: esc.id, guarnicoes: { create: [{ sigla: 'ABT-01', atividade: 'incendio', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'comandante', quantidade_sugerida: 1 }] } }] } },
   });
   const token = signAccess({ user_id: esc.id, cpf: esc.cpf });
-  return { lot, esc, token };
+  return { lot, esc, token, tmplId: tmpl.id };
 }
 
 describe('POST /api/v1/escalas', () => {
   it('403 sem role de escalante na lotação', async () => {
-    const { lot } = await setup(870);
+    const { lot, tmplId } = await setup(870);
     const outro = await testPrisma.user.create({ data: { cpf: '20202029999', nome: 'X', last_sync_at: new Date() } });
     const r = await request(buildApp()).post('/api/v1/escalas')
       .set('authorization', `Bearer ${signAccess({ user_id: outro.id, cpf: outro.cpf })}`)
-      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmplId });
     expect(r.status).toBe(403);
   });
 
   it('201 cria escala e gera dias', async () => {
-    const { lot, token } = await setup(871);
+    const { lot, token, tmplId } = await setup(871);
     const r = await request(buildApp()).post('/api/v1/escalas')
       .set('authorization', `Bearer ${token}`)
-      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmplId });
     expect(r.status).toBe(201);
     expect(r.body.data.status).toBe('rascunho');
   });
 
-  it('409 sem template', async () => {
+  it('409 com template_id inválido', async () => {
     const lot = await testPrisma.lotacao.create({ data: { id: 872, sigla: 'L872', nome: 'L', nivel: 3, operacional: true } });
     const esc = await testPrisma.user.create({ data: { cpf: '100872', nome: 'E', last_sync_at: new Date() } });
     await testPrisma.userRole.create({ data: { user_id: esc.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: esc.id } });
     const r = await request(buildApp()).post('/api/v1/escalas')
       .set('authorization', `Bearer ${signAccess({ user_id: esc.id, cpf: esc.cpf })}`)
-      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: 999999 });
     expect(r.status).toBe(409);
   });
 });
@@ -54,7 +54,7 @@ describe('POST /api/v1/escalas', () => {
 describe('GET escopo + mes + PUT dia', () => {
   async function comEscala(lotId: number) {
     const s = await setup(lotId);
-    const r = await request(buildApp()).post('/api/v1/escalas').set('authorization', `Bearer ${s.token}`).send({ lotacao_id: s.lot.id, mes: 4, ano: 2026 });
+    const r = await request(buildApp()).post('/api/v1/escalas').set('authorization', `Bearer ${s.token}`).send({ lotacao_id: s.lot.id, mes: 4, ano: 2026, template_id: s.tmplId });
     return { ...s, escalaId: r.body.data.id as number };
   }
 
@@ -96,9 +96,9 @@ describe('publicar / versões / deletar', () => {
     const lot = await testPrisma.lotacao.create({ data: { id: lotId, sigla: `L${lotId}`, nome: 'L', nivel: 3, operacional: true } });
     const esc = await testPrisma.user.create({ data: { cpf: `100${lotId}`, nome: 'E', last_sync_at: new Date() } });
     await testPrisma.userRole.create({ data: { user_id: esc.id, role: 'ESCALANTE', lotacao_id: lot.id, created_by: esc.id } });
-    await testPrisma.templateLotacao.create({ data: { lotacao_id: lot.id, criado_por_id: esc.id, guarnicoes: { create: [{ sigla: 'A', atividade: 'i', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'c', quantidade_sugerida: 1 }] } }] } } });
+    const tmpl = await testPrisma.templateLotacao.create({ data: { lotacao_id: lot.id, nome: 'Padrão', criado_por_id: esc.id, guarnicoes: { create: [{ sigla: 'A', atividade: 'i', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'c', quantidade_sugerida: 1 }] } }] } } });
     const token = signAccess({ user_id: esc.id, cpf: esc.cpf });
-    const r = await request(buildApp()).post('/api/v1/escalas').set('authorization', `Bearer ${token}`).send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+    const r = await request(buildApp()).post('/api/v1/escalas').set('authorization', `Bearer ${token}`).send({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id });
     return { token, escalaId: r.body.data.id as number };
   }
 
@@ -141,9 +141,10 @@ describe('GET /api/v1/escalas/:id/militares', () => {
     });
 
     // Template mínimo para criar a escala via POST
-    await testPrisma.templateLotacao.create({
+    const tmpl = await testPrisma.templateLotacao.create({
       data: {
         lotacao_id: lot.id,
+        nome: 'Padrão',
         criado_por_id: escalante.id,
         guarnicoes: {
           create: [{
@@ -179,7 +180,7 @@ describe('GET /api/v1/escalas/:id/militares', () => {
     const r = await request(buildApp())
       .post('/api/v1/escalas')
       .set('authorization', `Bearer ${token}`)
-      .send({ lotacao_id: lot.id, mes: 4, ano: 2026 });
+      .send({ lotacao_id: lot.id, mes: 4, ano: 2026, template_id: tmpl.id });
     const escalaId = r.body.data.id as number;
 
     return { lot, escalante, anaPaula, bruno, forasteiro, escalaId, token };
