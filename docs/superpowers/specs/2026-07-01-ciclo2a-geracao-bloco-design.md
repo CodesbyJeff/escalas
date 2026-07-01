@@ -24,7 +24,10 @@ O mapa de força do SISBOM (escala executada) mostra os padrões reais: prontid�
 
 1. **Turno que cruza a meia-noite: por convenção, sem campo novo.** Se
    `turno_fim ≤ turno_inicio`, o turno termina **no dia seguinte**. Resolve todos os casos
-   reais: `08→08`=24h, `19→07`=12h, `07→17`=10h. Aplicada na detecção de conflito e na duração.
+   reais: `08→08`=24h, `19→07`=12h, `07→17`=10h. **JÁ IMPLEMENTADO** em `utils/turnos.ts`
+   (`intervalo()` faz `if (f <= ini) f += 1440`; `turnosSobrepoem` compara em 0–48h) — a
+   detecção de conflito **por dia** já trata prontidão 24h. (O gap de descanso **entre dias**
+   — 24h→72h — é regra do 2c, não do 2a.) Nada a fazer aqui além de um teste que fixe o comportamento.
 2. **Escala segue mensal.** As ações de bloco operam **dentro do mês** da escala; período
    arbitrário fica fora de escopo agora.
 3. **Padrão mínimo no layout:** `TemplateGuarnicao.ciclo_dias Int?` (período do rodízio:
