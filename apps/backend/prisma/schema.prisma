@@ -24,6 +24,7 @@ model User {
   phone              String?
   posto              String?
   sisbom_id          String?           @unique
+  sisbom_lotacao_ref String?
   ativo              Boolean           @default(true)
   is_super_admin     Boolean           @default(false)
   senha_hash         String? // bcrypt; NULL = autentica via SISBOM AD
@@ -44,15 +45,19 @@ model User {
 }
 
 model Lotacao {
-  id             Int              @id
-  sigla          String           @unique
+  id             Int               @id @default(autoincrement())
+  sisbom_id      String?           @unique
+  sisbom_ref     String?           @unique
+  sigla          String
+  sigla_extenso  String?
   nome           String
   lotacao_pai_id Int?
   nivel          Int
-  operacional    Boolean          @default(false)
-  externo        Boolean          @default(false)
-  pai            Lotacao?         @relation("LotacaoHierarquia", fields: [lotacao_pai_id], references: [id])
-  filhas         Lotacao[]        @relation("LotacaoHierarquia")
+  operacional    Boolean           @default(false)
+  externo        Boolean           @default(false)
+  last_sync_at   DateTime?
+  pai            Lotacao?          @relation("LotacaoHierarquia", fields: [lotacao_pai_id], references: [id])
+  filhas         Lotacao[]         @relation("LotacaoHierarquia")
   user_lotacoes  UserLotacao[]
   user_roles     UserRole[]
   templates      TemplateLotacao[]
