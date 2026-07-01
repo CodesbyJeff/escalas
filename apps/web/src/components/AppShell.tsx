@@ -1,21 +1,22 @@
 import { AppShell, Burger, Group, NavLink, Text, ActionIcon, Avatar } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconClipboardCheck, IconLogout, IconGavel } from '@tabler/icons-react';
+import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconClipboardCheck, IconLogout, IconGavel, IconTemplate } from '@tabler/icons-react';
 import { Link, Outlet } from '@tanstack/react-router';
 import { type ReactNode } from 'react';
 import type { AuthUser } from '@escalas/shared-types';
 
-export function navFlags(user: AuthUser | null): { canExecutar: boolean; canValidar: boolean } {
+export function navFlags(user: AuthUser | null): { canExecutar: boolean; canValidar: boolean; canLayouts: boolean } {
   const roles = user?.roles ?? [];
   const sa = user?.is_super_admin ?? false;
   return {
     canExecutar: sa || roles.some((r) => r.role === 'FISCAL'),
     canValidar: sa || roles.some((r) => r.role === 'GESTOR'),
+    canLayouts: sa || roles.some((r) => r.role === 'ESCALANTE'),
   };
 }
 
-export function AppShellNav({ nome, papel, canExecutar, canValidar, onLogout, children }: {
-  nome: string; papel: string; canExecutar: boolean; canValidar: boolean; onLogout: () => void; children?: ReactNode;
+export function AppShellNav({ nome, papel, canExecutar, canValidar, canLayouts, onLogout, children }: {
+  nome: string; papel: string; canExecutar: boolean; canValidar: boolean; canLayouts: boolean; onLogout: () => void; children?: ReactNode;
 }) {
   const [opened, { toggle }] = useDisclosure();
   return (
@@ -36,6 +37,7 @@ export function AppShellNav({ nome, papel, canExecutar, canValidar, onLogout, ch
         <NavLink label="Escala" c="white" leftSection={<IconCalendar size={18} />} defaultOpened>
           <NavLink component={Link} to="/escalas" label="Listar" c="white" />
           <NavLink component={Link} to="/escalas/nova" label="Nova Escala" c="white" />
+          {canLayouts && <NavLink component={Link} to="/layouts" label="Layouts" c="white" leftSection={<IconTemplate size={16} />} />}
         </NavLink>
         {canExecutar && (
           <NavLink component={Link} to="/execucao" label="Execução" c="white" leftSection={<IconClipboardCheck size={18} />} />
