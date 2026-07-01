@@ -12,13 +12,13 @@ const guarnicao = {
   ],
 };
 
-it('mostra a sigla e marca vaga sem militar como VAGO', () => {
+it('mostra a sigla e marca vaga sem militar como DO', () => {
   renderWithProviders(
     <GuarnicaoCard escalaId={1} guarnicao={guarnicao} gi={0}
       onAddVaga={vi.fn()} onRemoveVaga={vi.fn()} onRemove={vi.fn()} getVagaProps={() => ({})} setMilitar={vi.fn()} />,
   );
   expect(screen.getByDisplayValue('SLV')).toBeInTheDocument();
-  expect(screen.getByText('VAGO')).toBeInTheDocument();
+  expect(screen.getByText('DO')).toBeInTheDocument();
 });
 
 it('chama onAddVaga ao clicar em "Adicionar Função / Militar"', async () => {
