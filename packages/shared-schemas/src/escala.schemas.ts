@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const horarioHHmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Formato esperado HH:mm');
+const dataISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data YYYY-MM-DD');
 
 export const criarEscalaSchema = z.object({
   lotacao_id: z.number().int().positive(),
@@ -36,8 +37,17 @@ export const duplicarDiaSchema = z.object({
   de: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data esperada YYYY-MM-DD'),
 });
 
+export const gerarBlocoSchema = z.object({
+  data_ini: dataISO, data_fim: dataISO, template_id: z.number().int().positive(),
+});
+export const repetirCicloSchema = z.object({
+  ciclo_ini: dataISO, ciclo_fim: dataISO, ate: dataISO,
+});
+
 export type CriarEscalaInput = z.infer<typeof criarEscalaSchema>;
 export type VagaInput = z.infer<typeof vagaInputSchema>;
 export type GuarnicaoInput = z.infer<typeof guarnicaoInputSchema>;
 export type PutDiaInput = z.infer<typeof putDiaSchema>;
 export type DuplicarDiaInput = z.infer<typeof duplicarDiaSchema>;
+export type GerarBlocoInput = z.infer<typeof gerarBlocoSchema>;
+export type RepetirCicloInput = z.infer<typeof repetirCicloSchema>;

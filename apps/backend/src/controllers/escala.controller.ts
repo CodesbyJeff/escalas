@@ -4,6 +4,7 @@ import { ok, fail } from '../utils/response.js';
 import { HttpError } from '../utils/errors.js';
 import { escalaService } from '../services/escala.service.js';
 import { adminService } from '../services/admin.service.js';
+import { geracaoBlocoService } from '../services/geracaoBloco.service.js';
 import type { MilitarDTO } from '@escalas/shared-types';
 
 function handle(res: Response, next: NextFunction, e: unknown): void {
@@ -120,6 +121,20 @@ export const escalaController = {
       if (!v) { fail(res, 'Versão não encontrada.', 404); return; }
       ok(res, 'Versão obtida.', v);
     } catch (e) { next(e); }
+  },
+
+  async gerarBloco(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const r = await geracaoBlocoService.carimbarEstrutura(Number(req.params.id), req.body.data_ini, req.body.data_fim, req.body.template_id, req.user!.id, prisma);
+      ok(res, 'Bloco gerado.', r);
+    } catch (e) { handle(res, next, e); }
+  },
+
+  async repetirCiclo(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const r = await geracaoBlocoService.repetirCiclo(Number(req.params.id), req.body.ciclo_ini, req.body.ciclo_fim, req.body.ate, req.user!.id, prisma);
+      ok(res, 'Ciclo repetido.', r);
+    } catch (e) { handle(res, next, e); }
   },
 
   async listarMilitares(req: Request, res: Response, next: NextFunction): Promise<void> {
