@@ -37,3 +37,34 @@ describe('geracaoBlocoService.carimbarEstrutura', () => {
     await expect(geracaoBlocoService.carimbarEstrutura(escala.id, '2026-08-28', '2026-09-03', tpl.id, admin.id, testPrisma)).rejects.toMatchObject({ status: 422 });
   });
 });
+
+describe('geracaoBlocoService.repetirCiclo', () => {
+  beforeEach(async () => { await resetDb(); });
+
+  it('repete o ciclo por offset circular (dia D+K = dia D)', async () => {
+    const { admin, escala } = await cenario();
+    const mil = await testPrisma.user.create({ data: { cpf: 'MIL1', nome: 'Mil', last_sync_at: new Date() } });
+    // preenche o dia 01 com o militar
+    const d1 = await escalaService.getDia(escala.id, '2026-09-01', testPrisma);
+    await escalaService.putDia(escala.id, '2026-09-01', {
+      guarnicoes: d1!.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, viatura_id: g.viatura_id, turno_inicio: g.turno_inicio, turno_fim: g.turno_fim, ordem: g.ordem,
+        vagas: g.vagas.map((v) => ({ funcao: v.funcao, militar_id: mil.id, turno_inicio: v.turno_inicio, turno_fim: v.turno_fim })) })),
+    }, admin.id, testPrisma);
+    // ciclo = só o dia 01 (K=1); repete até 03
+    const r = await geracaoBlocoService.repetirCiclo(escala.id, '2026-09-01', '2026-09-01', '2026-09-03', admin.id, testPrisma);
+    expect(r.dias_afetados).toBe(2);
+    const d3 = await escalaService.getDia(escala.id, '2026-09-03', testPrisma);
+    expect(d3!.guarnicoes[0]!.vagas[0]!.militar_id).toBe(mil.id);
+  });
+
+  it('422 quando ate ultrapassa o mês da escala', async () => {
+    const { admin, escala } = await cenario();
+    await expect(geracaoBlocoService.repetirCiclo(escala.id, '2026-09-01', '2026-09-01', '2026-10-05', admin.id, testPrisma)).rejects.toMatchObject({ status: 422 });
+  });
+
+  it('409 se a escala não está em rascunho', async () => {
+    const { admin, escala } = await cenario();
+    await testPrisma.escala.update({ where: { id: escala.id }, data: { status: 'publicada' } });
+    await expect(geracaoBlocoService.repetirCiclo(escala.id, '2026-09-01', '2026-09-01', '2026-09-03', admin.id, testPrisma)).rejects.toMatchObject({ status: 409 });
+  });
+});
