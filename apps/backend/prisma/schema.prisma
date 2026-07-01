@@ -117,6 +117,7 @@ model TemplateGuarnicao {
   turno_padrao_inicio String
   turno_padrao_fim    String
   ordem               Int
+  ciclo_dias          Int?
 
   template        TemplateLotacao        @relation(fields: [template_lotacao_id], references: [id], onDelete: Cascade)
   vagas_sugeridas TemplateVagaSugerida[]

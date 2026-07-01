@@ -13,6 +13,7 @@ export const guarnicaoTemplateInputSchema = z.object({
   turno_padrao_inicio: horarioHHmm,
   turno_padrao_fim: horarioHHmm,
   ordem: z.number().int().nonnegative(),
+  ciclo_dias: z.number().int().positive().max(31).optional(),
   vagas_sugeridas: z.array(vagaSugeridaInputSchema).min(1, 'Pelo menos uma vaga sugerida'),
 });
 

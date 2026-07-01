@@ -10,7 +10,8 @@ function mapGuarnicaoCreate(g: CriarLayoutInput['guarnicoes'][number]) {
   return {
     sigla: g.sigla, atividade: g.atividade,
     turno_padrao_inicio: g.turno_padrao_inicio, turno_padrao_fim: g.turno_padrao_fim,
-    ordem: g.ordem, vagas_sugeridas: { create: g.vagas_sugeridas },
+    ordem: g.ordem, ciclo_dias: g.ciclo_dias ?? null,
+    vagas_sugeridas: { create: g.vagas_sugeridas },
   };
 }
 

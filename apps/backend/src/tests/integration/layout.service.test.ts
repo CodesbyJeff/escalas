@@ -31,6 +31,20 @@ describe('layoutService', () => {
     await expect(layoutService.criar(lot.id, u.id, layoutInput('Padrão'), testPrisma)).rejects.toBeInstanceOf(ConflictError);
   });
 
+  it('persiste e retorna ciclo_dias da guarnição', async () => {
+    await resetDb();
+    const lot = await testPrisma.lotacao.create({ data: { id: 700, sigla: 'L700', nome: 'L', nivel: 3, operacional: true } });
+    const admin = await testPrisma.user.create({ data: { cpf: 'ADM700', nome: 'Adm', last_sync_at: new Date() } });
+    const criado = await layoutService.criar(lot.id, admin.id, {
+      nome: 'Prontidão', guarnicoes: [{
+        sigla: 'INC', atividade: 'INCENDIO', turno_padrao_inicio: '08:00', turno_padrao_fim: '08:00',
+        ordem: 0, ciclo_dias: 4, vagas_sugeridas: [{ funcao: 'CMT_GU', quantidade_sugerida: 1 }],
+      }],
+    }, testPrisma);
+    const obtido = await layoutService.obter(criado.id, testPrisma);
+    expect(obtido!.guarnicoes[0]!.ciclo_dias).toBe(4);
+  });
+
   it('atualizar substitui guarnições; excluir remove', async () => {
     const { lot, u } = await lotacaoEUser();
     const l = await layoutService.criar(lot.id, u.id, layoutInput('X'), testPrisma);
