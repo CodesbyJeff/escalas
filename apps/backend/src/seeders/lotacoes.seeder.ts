@@ -1,3 +1,6 @@
+// FALLBACK OFFLINE: a fonte real de lotações é o SISBOM (npm run bulk-sync / reset-sisbom).
+// Este seeder existe só para dev sem acesso ao SISBOM e usa ids fabricados —
+// NÃO rodar após um bulk do SISBOM (colide com os ids reais). Ver spec 2026-07-01.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
