@@ -1,9 +1,10 @@
 import type { PrismaClient } from '@prisma/client';
 import { sisbomClient } from '../integrations/sisbom/client.js';
+import { lotacaoService } from './lotacao.service.js';
 import { userService } from './user.service.js';
 import { logger } from '../utils/logger.js';
 
-const TRACKED = ['militar'] as const;
+const TRACKED = ['lotacoes', 'militar'] as const;
 const MAX_SYNC_ITER = 1000;
 const SNAPSHOT_PAGE = 500;
 
@@ -51,7 +52,8 @@ export const syncService = {
         for (const ev of resp.events) {
           try {
             await prisma.$transaction(async (tx) => {
-              if (ev.entity === 'militar') await userService.applyEvent(ev, tx as PrismaClient);
+              if (ev.entity === 'lotacoes') await lotacaoService.applyEvent(ev, tx as PrismaClient);
+              else if (ev.entity === 'militar') await userService.applyEvent(ev, tx as PrismaClient);
             });
             lastSeenTs = ev.at;
           } catch (e) {
@@ -83,33 +85,38 @@ export const syncService = {
   // Carga completa via /external/snapshot (bulk inicial / recuperação fora da janela de 7 dias).
   async bulkSnapshot(prisma: PrismaClient): Promise<void> {
     for (const entidade of TRACKED) {
-      let skip = 0;
-      let total = 0;
-      let iter = 0;
-      while (true) {
-        if (++iter > MAX_SYNC_ITER) {
-          logger.error('bulk_max_iter_exceeded', { entidade, skip });
-          break;
+      if (entidade === 'lotacoes') {
+        const todas: Record<string, unknown>[] = [];
+        let skip = 0, iter = 0;
+        while (true) {
+          if (++iter > MAX_SYNC_ITER) { logger.error('bulk_max_iter_exceeded', { entidade, skip }); break; }
+          const resp = await sisbomClient.getSnapshot({ entity: entidade, skip, limit: SNAPSHOT_PAGE });
+          todas.push(...resp.items);
+          if (!resp.has_more) break;
+          skip += SNAPSHOT_PAGE;
         }
-        const resp = await sisbomClient.getSnapshot({ entity: entidade, skip, limit: SNAPSHOT_PAGE });
-        for (const item of resp.items) {
-          try {
-            if (entidade === 'militar') {
-              await userService.upsertFromSisbom(item, new Date(), prisma);
-              total++;
-            }
-          } catch (e) {
-            logger.error('bulk_item_failed_skipping', {
-              entidade,
-              sisbom_id: item._id,
-              err: (e as Error).message,
-            });
+        todas.sort((a, b) => Number(a.nivel) - Number(b.nivel));
+        let total = 0;
+        for (const item of todas) {
+          try { await lotacaoService.upsertFromSisbom(item, new Date(), prisma); total++; }
+          catch (e) { logger.error('bulk_item_failed_skipping', { entidade, sisbom_id: item._id, err: (e as Error).message }); }
+        }
+        logger.info('bulk_snapshot_done', { entidade, total });
+      } else {
+        // militar — fluxo por página (como originalmente)
+        let skip = 0, total = 0, iter = 0;
+        while (true) {
+          if (++iter > MAX_SYNC_ITER) { logger.error('bulk_max_iter_exceeded', { entidade, skip }); break; }
+          const resp = await sisbomClient.getSnapshot({ entity: entidade, skip, limit: SNAPSHOT_PAGE });
+          for (const item of resp.items) {
+            try { await userService.upsertFromSisbom(item, new Date(), prisma); total++; }
+            catch (e) { logger.error('bulk_item_failed_skipping', { entidade, sisbom_id: item._id, err: (e as Error).message }); }
           }
+          if (!resp.has_more) break;
+          skip += SNAPSHOT_PAGE;
         }
-        if (!resp.has_more) break;
-        skip += SNAPSHOT_PAGE;
+        logger.info('bulk_snapshot_done', { entidade, total });
       }
-      logger.info('bulk_snapshot_done', { entidade, total });
     }
 
     // Após o bulk, alinha o cursor ao mirror-ref atual pra o incremental seguir daqui.

@@ -1,10 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { testPrisma } from '../helpers/db.js';
-import { syncService } from '../../services/sync.service.js';
-import { sisbomClient } from '../../integrations/sisbom/client.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetDb, testPrisma } from '../helpers/db.js';
 
-beforeEach(() => {
-  vi.restoreAllMocks();
+vi.mock('../../integrations/sisbom/client.js', () => ({
+  sisbomClient: {
+    getMirrorRef: vi.fn(),
+    getEvents: vi.fn(),
+    getSnapshot: vi.fn(),
+  },
+}));
+
+import { sisbomClient } from '../../integrations/sisbom/client.js';
+import { syncService } from '../../services/sync.service.js';
+
+const mocked = sisbomClient as unknown as {
+  getMirrorRef: ReturnType<typeof vi.fn>;
+  getEvents: ReturnType<typeof vi.fn>;
+  getSnapshot: ReturnType<typeof vi.fn>;
+};
+
+beforeEach(async () => {
+  await resetDb();
+  vi.clearAllMocks();
 });
 
 const mirror = (militarTs: string) => ({ ref: { militar: militarTs }, server_time: militarTs });
@@ -15,7 +31,7 @@ describe('syncService.runOnce', () => {
     await testPrisma.syncCursor.create({
       data: { entidade: 'militar', last_sync_at: new Date(now), last_mirror_ref_at: new Date(now) },
     });
-    vi.spyOn(sisbomClient, 'getMirrorRef').mockResolvedValue(mirror(now));
+    mocked.getMirrorRef.mockResolvedValue(mirror(now));
     const spy = vi.spyOn(sisbomClient, 'getEvents');
     await syncService.runOnce(testPrisma);
     expect(spy).not.toHaveBeenCalled();
@@ -27,8 +43,8 @@ describe('syncService.runOnce', () => {
     await testPrisma.syncCursor.create({
       data: { entidade: 'militar', last_sync_at: new Date(before), last_mirror_ref_at: new Date(before) },
     });
-    vi.spyOn(sisbomClient, 'getMirrorRef').mockResolvedValue(mirror(after));
-    vi.spyOn(sisbomClient, 'getEvents').mockResolvedValue({
+    mocked.getMirrorRef.mockResolvedValue(mirror(after));
+    mocked.getEvents.mockResolvedValue({
       events: [{
         id: 'e1', op: 'create', entity: 'militar', entity_id: 'x', at: after,
         data: { _id: 'x', str_cpf: '11122233344', pessoa: { str_nome: 'Z' } },
@@ -52,8 +68,8 @@ describe('syncService.runOnce', () => {
     await testPrisma.user.create({
       data: { cpf: '11122233344', nome: 'Pre', sisbom_id: 'preexisting', last_sync_at: new Date(before) },
     });
-    vi.spyOn(sisbomClient, 'getMirrorRef').mockResolvedValue(mirror(after));
-    vi.spyOn(sisbomClient, 'getEvents').mockResolvedValue({
+    mocked.getMirrorRef.mockResolvedValue(mirror(after));
+    mocked.getEvents.mockResolvedValue({
       events: [
         { id: 'bad', op: 'create', entity: 'militar', entity_id: 'novo-evt-ruim', at: '2026-05-15T09:30:00Z', data: { _id: 'novo-evt-ruim', str_cpf: '11122233344', pessoa: { str_nome: 'Conflito' } } },
         { id: 'ok', op: 'create', entity: 'militar', entity_id: 'novo-ok', at: after, data: { _id: 'novo-ok', str_cpf: '22233344455', pessoa: { str_nome: 'OK' } } },
@@ -70,13 +86,45 @@ describe('syncService.runOnce', () => {
 
 describe('syncService.bulkSnapshot', () => {
   it('carrega militares via snapshot paginado e alinha o cursor', async () => {
-    vi.spyOn(sisbomClient, 'getSnapshot')
+    // lotacoes é chamado primeiro (TRACKED: ['lotacoes', 'militar'])
+    mocked.getSnapshot
+      .mockResolvedValueOnce({ entity: 'lotacoes', items: [], skip: 0, limit: 500, has_more: false })
       .mockResolvedValueOnce({ entity: 'militar', items: [{ _id: 'm1', str_cpf: '10000000001', pessoa: { str_nome: 'A' } }], skip: 0, limit: 500, has_more: true })
       .mockResolvedValueOnce({ entity: 'militar', items: [{ _id: 'm2', str_cpf: '10000000002', pessoa: { str_nome: 'B' } }], skip: 500, limit: 500, has_more: false });
-    vi.spyOn(sisbomClient, 'getMirrorRef').mockResolvedValue(mirror('2026-05-15T10:00:00Z'));
+    mocked.getMirrorRef.mockResolvedValue(mirror('2026-05-15T10:00:00Z'));
     await syncService.bulkSnapshot(testPrisma);
     expect(await testPrisma.user.count()).toBe(2);
     const cursor = await testPrisma.syncCursor.findUnique({ where: { entidade: 'militar' } });
     expect(cursor?.last_mirror_ref_at.toISOString()).toBe(new Date('2026-05-15T10:00:00Z').toISOString());
+  });
+});
+
+describe('syncService.bulkSnapshot — lotações antes de militares', () => {
+  it('aplica lotações (ordenadas por nivel) e vincula militares', async () => {
+    mocked.getSnapshot.mockImplementation(async ({ entity }: { entity: string }) => {
+      if (entity === 'lotacoes') {
+        return {
+          entity,
+          items: [
+            { _id: 'id-ctic', ref: 'CTIC', str_sigla: 'CTIC', str_nome: 'CTIC', _pai: 'DLOF', nivel: '2' },
+            { _id: 'id-dlof', ref: 'DLOF', str_sigla: 'DLOF', str_nome: 'DLOF', _pai: '', nivel: '1' },
+          ],
+          skip: 0, limit: 500, has_more: false,
+        };
+      }
+      return {
+        entity, items: [{ _id: 'm1', str_cpf: '111', pessoa: { str_nome: 'F' }, _lotacao: 'CTIC' }],
+        skip: 0, limit: 500, has_more: false,
+      };
+    });
+    mocked.getMirrorRef.mockResolvedValue({ ref: { lotacoes: null, militar: null }, server_time: '2026-07-01T00:00:00.000Z' });
+
+    await syncService.bulkSnapshot(testPrisma);
+
+    const dlof = await testPrisma.lotacao.findUnique({ where: { sisbom_ref: 'DLOF' } });
+    const ctic = await testPrisma.lotacao.findUnique({ where: { sisbom_ref: 'CTIC' } });
+    expect(ctic?.lotacao_pai_id).toBe(dlof?.id); // pai resolvido apesar de vir antes no array
+    const user = await testPrisma.user.findUnique({ where: { sisbom_id: 'm1' }, include: { lotacoes: true } });
+    expect(user?.lotacoes[0]?.lotacao_id).toBe(ctic?.id);
   });
 });
