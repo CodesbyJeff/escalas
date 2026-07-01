@@ -16,10 +16,6 @@ export const guarnicaoTemplateInputSchema = z.object({
   vagas_sugeridas: z.array(vagaSugeridaInputSchema).min(1, 'Pelo menos uma vaga sugerida'),
 });
 
-export const upsertTemplateLotacaoSchema = z.object({
-  guarnicoes: z.array(guarnicaoTemplateInputSchema).min(1, 'Pelo menos uma guarnição'),
-});
-
 export const criarLayoutSchema = z.object({
   nome: z.string().trim().min(1, 'Nome obrigatório').max(60),
   guarnicoes: z.array(guarnicaoTemplateInputSchema).min(1, 'Pelo menos uma guarnição'),
@@ -28,5 +24,4 @@ export const atualizarLayoutSchema = criarLayoutSchema;
 
 export type VagaSugeridaInput = z.infer<typeof vagaSugeridaInputSchema>;
 export type GuarnicaoTemplateInput = z.infer<typeof guarnicaoTemplateInputSchema>;
-export type UpsertTemplateLotacaoInput = z.infer<typeof upsertTemplateLotacaoSchema>;
 export type CriarLayoutInput = z.infer<typeof criarLayoutSchema>;

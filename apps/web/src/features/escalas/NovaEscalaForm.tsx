@@ -41,7 +41,7 @@ export function NovaEscalaForm({ lotacoes, onSubmit }: {
           />
           <Select
             label="Layout"
-            placeholder={semLayouts ? 'Crie um layout para esta lotação em Layouts' : 'Selecione um layout...'}
+            placeholder="Selecione um layout..."
             data={layoutOptions}
             value={form.values.template_id ? String(form.values.template_id) : null}
             onChange={(v) => form.setFieldValue('template_id', Number(v))}

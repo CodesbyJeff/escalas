@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Group, Select, Stack, Table, Text, Title } from '@mantine/core';
+import { Button, Group, Loader, Select, Stack, Table, Text, Title } from '@mantine/core';
+import type { CriarLayoutInput } from '@escalas/shared-schemas';
 import { notifications } from '@mantine/notifications';
 import { layoutsApi } from '../../../lib/api/layouts';
 import { useLotacoesDoUsuario } from '../../../features/escalas/useLotacoesDoUsuario';
@@ -52,8 +53,18 @@ export function LayoutsPage() {
 }
 
 function LayoutForm({ lotacaoId, editId, onDone }: { lotacaoId: number; editId: number | 'novo'; onDone: () => void }) {
-  const { data: existente } = useQuery({ queryKey: ['layout', editId], queryFn: () => layoutsApi.obter(editId as number), enabled: editId !== 'novo' });
-  const draft = useLayoutDraft(existente ? { nome: existente.nome, guarnicoes: existente.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, turno_padrao_inicio: g.turno_padrao_inicio, turno_padrao_fim: g.turno_padrao_fim, ordem: g.ordem, vagas_sugeridas: g.vagas_sugeridas.map((v) => ({ funcao: v.funcao, quantidade_sugerida: v.quantidade_sugerida })) })) } : undefined);
+  const { data: existente, isLoading } = useQuery({ queryKey: ['layout', editId], queryFn: () => layoutsApi.obter(editId as number), enabled: editId !== 'novo' });
+  // Só monta o form (que semeia o useLayoutDraft) depois que o layout carregou — senão o
+  // draft inicializa vazio e nunca repopula (o useForm lê initialValues só no 1º render).
+  if (editId !== 'novo' && (isLoading || !existente)) return <Loader />;
+  const inicial: CriarLayoutInput | undefined = existente
+    ? { nome: existente.nome, guarnicoes: existente.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, turno_padrao_inicio: g.turno_padrao_inicio, turno_padrao_fim: g.turno_padrao_fim, ordem: g.ordem, vagas_sugeridas: g.vagas_sugeridas.map((v) => ({ funcao: v.funcao, quantidade_sugerida: v.quantidade_sugerida })) })) }
+    : undefined;
+  return <LayoutFormInner lotacaoId={lotacaoId} editId={editId} inicial={inicial} onDone={onDone} />;
+}
+
+function LayoutFormInner({ lotacaoId, editId, inicial, onDone }: { lotacaoId: number; editId: number | 'novo'; inicial: CriarLayoutInput | undefined; onDone: () => void }) {
+  const draft = useLayoutDraft(inicial);
   const salvar = useMutation({
     mutationFn: () => editId === 'novo' ? layoutsApi.criar(lotacaoId, draft.toPayload()) : layoutsApi.atualizar(editId, draft.toPayload()),
     onSuccess: () => { notifications.show({ message: 'Layout salvo.' }); onDone(); },
