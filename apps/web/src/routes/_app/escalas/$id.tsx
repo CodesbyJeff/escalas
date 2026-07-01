@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Loader, Modal, Stack, Title, Text } from '@mantine/core';
+import { Box, Group, Loader, Stack, Title, Text } from '@mantine/core';
 import { escalasApi } from '../../../lib/api/escalas';
 import { SeletorDeDia } from '../../../features/escalas/SeletorDeDia';
 
@@ -10,19 +10,23 @@ function DetalhePage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { data: escala, isLoading } = useQuery({
-    queryKey: ['escala', Number(id)], queryFn: () => escalasApi.detalhe(Number(id)),
+    queryKey: ['escala-mes', Number(id)], queryFn: () => escalasApi.getMes(Number(id)),
   });
   if (isLoading || !escala) return <Loader />;
   return (
     <Stack>
       <Title order={3}>Escala {String(escala.mes).padStart(2, '0')}/{escala.ano}</Title>
-      <Text>Selecione o dia que deseja editar:</Text>
-      <Modal opened onClose={() => navigate({ to: '/escalas' })} title="Selecione o dia" centered>
-        <SeletorDeDia
-          mes={escala.mes} ano={escala.ano}
-          onSelecionar={(data) => navigate({ to: '/escalas/$id/dias/$data', params: { id, data } })}
-        />
-      </Modal>
+      <Text>Clique no dia para editar</Text>
+      <SeletorDeDia
+        mes={escala.mes} ano={escala.ano} dias={escala.dias}
+        onSelecionar={(data) => navigate({ to: '/escalas/$id/dias/$data', params: { id, data } })}
+      />
+      <Group>
+        <Box w={16} h={16} bg="green.2" style={{ borderRadius: 4 }} />
+        <Text size="sm">Completo</Text>
+        <Box w={16} h={16} bg="yellow.2" style={{ borderRadius: 4 }} />
+        <Text size="sm">Tem vaga aberta (DO)</Text>
+      </Group>
     </Stack>
   );
 }
