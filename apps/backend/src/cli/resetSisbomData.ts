@@ -15,8 +15,9 @@ export async function resetSisbomData(prismaClient: PrismaClient, opts: ResetOpt
   if (opts.nodeEnv === 'production' || !opts.confirm) {
     throw new Error('reset-sisbom: recusado (produção ou sem confirmação explícita).');
   }
-  // Ordem FK-safe (mesma do tests/helpers/db.ts), preservando super-admins? Não:
-  // é reset de dados sincronizados/derivados de teste. Ver spec.
+  // Ordem FK-safe (mesma do tests/helpers/db.ts). NÃO deletamos `user`
+  // (preserva super-admins locais) nem `feriado` — só dados de lotação/escala
+  // derivados do SISBOM. userLotacao é limpo antes, então não fica FK pendente.
   await prismaClient.auditLog.deleteMany();
   await prismaClient.validacaoEscala.deleteMany();
   await prismaClient.escalaVersao.deleteMany();
