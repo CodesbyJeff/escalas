@@ -2,42 +2,35 @@ import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db.js';
 import { ok, fail } from '../utils/response.js';
 import { HttpError } from '../utils/errors.js';
-import { templateService } from '../services/template.service.js';
+import { layoutService } from '../services/template.service.js';
+
+function handle(res: Response, next: NextFunction, e: unknown): void {
+  if (e instanceof HttpError) { fail(res, e.message, e.status); return; }
+  next(e);
+}
 
 export const templateController = {
-  async getByLotacao(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const lotacao_id = Number(req.params.lotacao_id);
-      if (Number.isNaN(lotacao_id)) {
-        fail(res, 'lotacao_id inválido.', 422);
-        return;
-      }
-      const t = await templateService.getByLotacao(lotacao_id, prisma);
-      if (!t) {
-        fail(res, 'Template não configurado para essa lotação.', 404);
-        return;
-      }
-      ok(res, 'Template obtido.', t);
-    } catch (e) {
-      next(e);
-    }
+  async listar(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try { ok(res, 'Layouts listados.', await layoutService.listarPorLotacao(Number(req.params.lotacao_id), prisma)); }
+    catch (e) { handle(res, next, e); }
   },
-
-  async upsert(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async obter(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const lotacao_id = Number(req.params.lotacao_id);
-      if (Number.isNaN(lotacao_id)) {
-        fail(res, 'lotacao_id inválido.', 422);
-        return;
-      }
-      const result = await templateService.upsert(lotacao_id, req.user!.id, req.body, prisma);
-      ok(res, 'Template salvo.', result, 200);
-    } catch (e) {
-      if (e instanceof HttpError) {
-        fail(res, e.message, e.status);
-        return;
-      }
-      next(e);
-    }
+      const l = await layoutService.obter(Number(req.params.id), prisma);
+      if (!l) { fail(res, 'Layout não encontrado.', 404); return; }
+      ok(res, 'Layout obtido.', l);
+    } catch (e) { handle(res, next, e); }
+  },
+  async criar(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try { ok(res, 'Layout criado.', await layoutService.criar(Number(req.params.lotacao_id), req.user!.id, req.body, prisma), 201); }
+    catch (e) { handle(res, next, e); }
+  },
+  async atualizar(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try { ok(res, 'Layout atualizado.', await layoutService.atualizar(Number(req.params.id), req.user!.id, req.body, prisma)); }
+    catch (e) { handle(res, next, e); }
+  },
+  async excluir(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try { await layoutService.excluir(Number(req.params.id), prisma); ok(res, 'Layout excluído.', null); }
+    catch (e) { handle(res, next, e); }
   },
 };
