@@ -8,7 +8,7 @@ export function NovaEscalaForm({ lotacoes, onSubmit }: {
   onSubmit: (v: CriarEscalaInput) => Promise<void>;
 }) {
   const form = useForm({
-    initialValues: { lotacao_id: 0, mes: now.getMonth() + 1, ano: now.getFullYear() },
+    initialValues: { lotacao_id: 0, mes: now.getMonth() + 1, ano: now.getFullYear(), template_id: 0 },
     validate: zodResolver(criarEscalaSchema),
   });
   return (
