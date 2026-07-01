@@ -3,6 +3,7 @@ import type { CriarEscalaInput, PutDiaInput } from '@escalas/shared-schemas';
 import { ConflictError, NotFoundError, HttpError } from '../utils/errors.js';
 import { diasDoMes } from '../utils/calendario.js';
 import { encontrarConflitos } from '../utils/turnos.js';
+import { guarnicoesCreateDoTemplate } from '../utils/estruturaTemplate.js';
 import { auditService } from './audit.service.js';
 
 export const escalaService = {
@@ -36,24 +37,7 @@ export const escalaService = {
           dias: {
             create: dias.map((data) => ({
               data,
-              guarnicoes: {
-                create: template.guarnicoes.map((g) => ({
-                  sigla: g.sigla,
-                  atividade: g.atividade,
-                  turno_inicio: g.turno_padrao_inicio,
-                  turno_fim: g.turno_padrao_fim,
-                  ordem: g.ordem,
-                  vagas: {
-                    create: g.vagas_sugeridas.flatMap((vs) =>
-                      Array.from({ length: vs.quantidade_sugerida }, () => ({
-                        funcao: vs.funcao,
-                        turno_inicio: g.turno_padrao_inicio,
-                        turno_fim: g.turno_padrao_fim,
-                      })),
-                    ),
-                  },
-                })),
-              },
+              guarnicoes: { create: guarnicoesCreateDoTemplate(template.guarnicoes) },
             })),
           },
         },
