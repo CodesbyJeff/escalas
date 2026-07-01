@@ -50,6 +50,17 @@ describe('validacaoService.validar', () => {
     expect(logs).toHaveLength(1);
   });
 
+  it('aprova mesmo com mapa-forca do SISBOM indisponível (404): snapshot null, não quebra', async () => {
+    const { escala, gestor } = await emValidacao(904, '94094094094');
+    // Realidade sem /external/mapa-forca em produção: o proxy responde 404.
+    nock(ext.origin).get(ext.pathname + '/mapa-forca').query(true).reply(404, { error: 'not found' });
+    const val = await validacaoService.validar(escala.id, { status: 'aprovada' }, gestor.id, testPrisma);
+    expect(val.status).toBe('aprovada');
+    expect(val.mapa_forca_snapshot).toBeNull();
+    const atualizada = await testPrisma.escala.findUnique({ where: { id: escala.id } });
+    expect(atualizada!.status).toBe('aprovada');
+  });
+
   it('rejeita com justificativa: status rejeitada + justificativa gravada', async () => {
     const { escala, gestor } = await emValidacao(901, '91091091091');
     mockMapaForca();

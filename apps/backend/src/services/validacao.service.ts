@@ -4,6 +4,7 @@ import { ConflictError, NotFoundError, HttpError } from '../utils/errors.js';
 import { diasDoMes } from '../utils/calendario.js';
 import { sisbomClient } from '../integrations/sisbom/client.js';
 import { auditService } from './audit.service.js';
+import { logger } from '../utils/logger.js';
 
 function periodoDoMes(mes: number, ano: number): { date_start: string; date_end: string } {
   const dias = diasDoMes(mes, ano);
@@ -43,8 +44,16 @@ export const validacaoService = {
     });
     if (!ultimaVersao) throw new ConflictError('Escala sem versão publicada.');
 
-    // Congela o mapa de força no momento da validação (audit mesmo que o SISBOM mude).
-    const mapa = await this.getMapaForca(escala_id, undefined, prisma);
+    // Congela o mapa de força do SISBOM como snapshot de auditoria (best-effort).
+    // O Passo 5 decidiu contagem LOCAL (Opção A) — este snapshot NÃO é um gate da
+    // aprovação. Se o SISBOM/mapa-forca estiver indisponível (ex.: /external/mapa-forca
+    // ainda não existe em produção), registra null e segue, sem quebrar a validação.
+    let mapa: unknown = null;
+    try {
+      mapa = await this.getMapaForca(escala_id, undefined, prisma);
+    } catch (e) {
+      logger.warn('validacao_mapa_forca_indisponivel', { escala_id, err: (e as Error).message });
+    }
 
     return prisma.$transaction(async (tx) => {
       const validacao = await tx.validacaoEscala.create({
