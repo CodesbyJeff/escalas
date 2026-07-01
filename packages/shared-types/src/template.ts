@@ -17,7 +17,15 @@ export interface TemplateGuarnicaoDTO {
 export interface TemplateLotacaoDTO {
   id: number;
   lotacao_id: number;
+  nome: string;
   criado_por_id: number;
   updated_at: string;
   guarnicoes: TemplateGuarnicaoDTO[];
+}
+
+export interface LayoutResumoDTO {
+  id: number;
+  lotacao_id: number;
+  nome: string;
+  qtd_guarnicoes: number;
 }

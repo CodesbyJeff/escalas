@@ -55,7 +55,7 @@ model Lotacao {
   filhas         Lotacao[]        @relation("LotacaoHierarquia")
   user_lotacoes  UserLotacao[]
   user_roles     UserRole[]
-  template       TemplateLotacao?
+  templates      TemplateLotacao[]
   escalas        Escala[]
 }
 
@@ -90,14 +90,17 @@ model SyncCursor {
 
 model TemplateLotacao {
   id            Int      @id @default(autoincrement())
-  lotacao_id    Int      @unique
+  lotacao_id    Int
+  nome          String
   criado_por_id Int
   updated_at    DateTime @updatedAt
 
   lotacao    Lotacao             @relation(fields: [lotacao_id], references: [id])
   criado_por User                @relation(fields: [criado_por_id], references: [id])
   guarnicoes TemplateGuarnicao[]
+  escalas    Escala[]
 
+  @@unique([lotacao_id, nome])
   @@index([criado_por_id])
 }
 
@@ -142,18 +145,21 @@ model Escala {
   ano           Int
   status        EscalaStatus @default(rascunho)
   criado_por_id Int
+  template_id   Int?
   publicado_em  DateTime?
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
 
-  lotacao    Lotacao           @relation(fields: [lotacao_id], references: [id])
-  criado_por User              @relation("EscalaCriador", fields: [criado_por_id], references: [id])
+  lotacao    Lotacao              @relation(fields: [lotacao_id], references: [id])
+  criado_por User                 @relation("EscalaCriador", fields: [criado_por_id], references: [id])
+  template   TemplateLotacao?     @relation(fields: [template_id], references: [id], onDelete: SetNull)
   dias       EscalaDia[]
   versoes    EscalaVersao[]
   validacoes ValidacaoEscala[]
 
   @@unique([lotacao_id, mes, ano])
   @@index([criado_por_id])
+  @@index([template_id])
 }
 
 model EscalaDia {
