@@ -63,6 +63,7 @@ export const geracaoBlocoService = {
     const alvoIni = new Date(cicloDias[cicloDias.length - 1]!);
     alvoIni.setUTCDate(alvoIni.getUTCDate() + 1);
     const alvos = diasNoIntervalo(alvoIni.toISOString().slice(0, 10), ate);
+    if (alvos.length === 0) throw new HttpError(422, 'O "até" deve ser posterior ao fim do ciclo.');
     validarIntervaloNoMes(escala, [...cicloDias, ...alvos]);
 
     // Lê o conteúdo preenchido dos dias-fonte, na ordem do ciclo.

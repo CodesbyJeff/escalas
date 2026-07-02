@@ -36,6 +36,16 @@ describe('geracaoBlocoService.carimbarEstrutura', () => {
     const { admin, tpl, escala } = await cenario();
     await expect(geracaoBlocoService.carimbarEstrutura(escala.id, '2026-08-28', '2026-09-03', tpl.id, admin.id, testPrisma)).rejects.toMatchObject({ status: 422 });
   });
+
+  it('409 se o template pertence a outra lotação', async () => {
+    const { admin, escala } = await cenario();
+    const lot801 = await testPrisma.lotacao.create({ data: { id: 801, sigla: 'L801', nome: 'L2', nivel: 3, operacional: true } });
+    const tpl801 = await testPrisma.templateLotacao.create({
+      data: { lotacao_id: lot801.id, nome: 'P2', criado_por_id: admin.id,
+        guarnicoes: { create: [{ sigla: 'INC', atividade: 'INCENDIO', turno_padrao_inicio: '08:00', turno_padrao_fim: '08:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'CMT_GU', quantidade_sugerida: 1 }] } }] } },
+    });
+    await expect(geracaoBlocoService.carimbarEstrutura(escala.id, '2026-09-01', '2026-09-03', tpl801.id, admin.id, testPrisma)).rejects.toMatchObject({ status: 409 });
+  });
 });
 
 describe('geracaoBlocoService.repetirCiclo', () => {
@@ -66,5 +76,10 @@ describe('geracaoBlocoService.repetirCiclo', () => {
     const { admin, escala } = await cenario();
     await testPrisma.escala.update({ where: { id: escala.id }, data: { status: 'publicada' } });
     await expect(geracaoBlocoService.repetirCiclo(escala.id, '2026-09-01', '2026-09-01', '2026-09-03', admin.id, testPrisma)).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('422 quando ate é anterior ou igual ao fim do ciclo', async () => {
+    const { admin, escala } = await cenario();
+    await expect(geracaoBlocoService.repetirCiclo(escala.id, '2026-09-05', '2026-09-05', '2026-09-03', admin.id, testPrisma)).rejects.toMatchObject({ status: 422 });
   });
 });
