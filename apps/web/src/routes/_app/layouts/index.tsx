@@ -58,7 +58,7 @@ function LayoutForm({ lotacaoId, editId, onDone }: { lotacaoId: number; editId: 
   // draft inicializa vazio e nunca repopula (o useForm lê initialValues só no 1º render).
   if (editId !== 'novo' && (isLoading || !existente)) return <Loader />;
   const inicial: CriarLayoutInput | undefined = existente
-    ? { nome: existente.nome, guarnicoes: existente.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, turno_padrao_inicio: g.turno_padrao_inicio, turno_padrao_fim: g.turno_padrao_fim, ordem: g.ordem, vagas_sugeridas: g.vagas_sugeridas.map((v) => ({ funcao: v.funcao, quantidade_sugerida: v.quantidade_sugerida, patentes_esperadas: v.patentes_esperadas ?? [] })) })) }
+    ? { nome: existente.nome, guarnicoes: existente.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, turno_padrao_inicio: g.turno_padrao_inicio, turno_padrao_fim: g.turno_padrao_fim, ordem: g.ordem, ciclo_dias: g.ciclo_dias ?? undefined, vagas_sugeridas: g.vagas_sugeridas.map((v) => ({ funcao: v.funcao, quantidade_sugerida: v.quantidade_sugerida, patentes_esperadas: v.patentes_esperadas ?? [] })) })) }
     : undefined;
   return <LayoutFormInner lotacaoId={lotacaoId} editId={editId} inicial={inicial} onDone={onDone} />;
 }
