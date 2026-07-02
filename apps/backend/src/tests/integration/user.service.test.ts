@@ -151,4 +151,17 @@ describe('userService.upsertFromSisbom — vínculo de lotação', () => {
     const u = await testPrisma.user.findUnique({ where: { sisbom_id: 'sis-2' } });
     expect(u!.patente_id).toBeNull();
   });
+
+  it('_patente desconhecido (fora do seed): militar NÃO some do sync, patente_id=null', async () => {
+    await resetDb();
+    // nenhuma Patente semeada → _patente 999 não existe
+    await userService.upsertFromSisbom(
+      { _id: 'sis-3', str_cpf: '10101010101', pessoa: { str_nome: 'Ciclano' }, _patente: 999, _lotacao: '', ativo: true },
+      new Date(),
+      testPrisma,
+    );
+    const u = await testPrisma.user.findUnique({ where: { sisbom_id: 'sis-3' } });
+    expect(u).not.toBeNull();
+    expect(u!.patente_id).toBeNull();
+  });
 });

@@ -39,6 +39,14 @@ export const userService = {
     }
     const pessoa = data.pessoa as Record<string, unknown> | undefined;
     const lotacaoRef = data._lotacao ? String(data._lotacao) : '';
+    // Defensivo: só vincula a patente se ela existir na réplica local (seed).
+    // Um _patente desconhecido (ex.: força nova no SISBOM) degrada a elegibilidade,
+    // mas NUNCA derruba o militar do sync por violação de FK.
+    const patenteIdBruto = data._patente != null ? Number(data._patente) : null;
+    const patenteId =
+      patenteIdBruto != null && (await prisma.patente.findUnique({ where: { id: patenteIdBruto }, select: { id: true } }))
+        ? patenteIdBruto
+        : null;
     const payload = {
       cpf,
       matricula: data.str_matricula ? String(data.str_matricula).replace(/\D/g, '') : null,
@@ -47,7 +55,7 @@ export const userService = {
       sisbom_id,
       ativo: data.ativo === undefined ? true : Boolean(data.ativo),
       sisbom_lotacao_ref: lotacaoRef || null,
-      patente_id: data._patente != null ? Number(data._patente) : null,
+      patente_id: patenteId,
       last_sync_at: ts,
     };
 

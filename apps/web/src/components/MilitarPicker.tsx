@@ -22,7 +22,7 @@ export function MilitarPicker({ escalaId, value, onChange, patentesEsperadas }: 
     .sort((a, b) => Number(inelegivel(a)) - Number(inelegivel(b)))
     .map((m) => ({
       value: String(m.id),
-      label: `${inelegivel(m) ? '⚠ ' : ''}${m.patente_sigla ?? ''} ${m.nome}${m.matricula ? ` (${m.matricula})` : ''}`.trim(),
+      label: `${inelegivel(m) ? '⚠ ' : ''}${m.patente_sigla ?? m.posto ?? ''} ${m.nome}${m.matricula ? ` (${m.matricula})` : ''}`.trim(),
     }));
   const selecionado = value ? options.find((o) => o.value === String(value))?.label ?? busca : busca;
   const militarSelecionado = value ? data.find((m) => m.id === value) : undefined;
