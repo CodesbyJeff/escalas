@@ -3,13 +3,14 @@ import { IconX, IconPlus } from '@tabler/icons-react';
 import type { GuarnicaoInput } from '@escalas/shared-schemas';
 import { VagaRow } from './VagaRow';
 
-export function GuarnicaoCard({ escalaId, guarnicao, gi, getInputProps, getVagaProps, setMilitar, onAddVaga, onRemoveVaga, onRemove, conflitos }: {
+export function GuarnicaoCard({ escalaId, guarnicao, gi, getInputProps, getVagaProps, setMilitar, onAddVaga, onRemoveVaga, onRemove, conflitos, getPatentesEsperadas }: {
   escalaId: number; guarnicao: GuarnicaoInput; gi: number;
   getInputProps?: (path: string) => object;
   getVagaProps: (gi: number, vi: number) => object;
   setMilitar: (gi: number, vi: number, id: number | null) => void;
   onAddVaga: (gi: number) => void; onRemoveVaga: (gi: number, vi: number) => void; onRemove: (gi: number) => void;
   conflitos?: Set<number>;
+  getPatentesEsperadas?: (gi: number, vi: number) => number[] | null;
 }) {
   const gp = getInputProps ?? (() => ({}));
   const siglaProp = gp(`guarnicoes.${gi}.sigla`);
@@ -27,6 +28,7 @@ export function GuarnicaoCard({ escalaId, guarnicao, gi, getInputProps, getVagaP
         {guarnicao.vagas.map((v, vi) => (
           <VagaRow key={vi} escalaId={escalaId} vaga={v} funcaoProps={getVagaProps(gi, vi)}
             conflito={conflitos?.has(v.militar_id ?? -1)}
+            patentesEsperadas={getPatentesEsperadas?.(gi, vi) ?? null}
             onSetMilitar={(id) => setMilitar(gi, vi, id)} onRemove={() => onRemoveVaga(gi, vi)} />
         ))}
       </Stack>
