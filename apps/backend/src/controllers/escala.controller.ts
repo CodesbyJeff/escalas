@@ -148,6 +148,8 @@ export const escalaController = {
         nome_curto: u.nome_curto,
         matricula: u.matricula,
         posto: u.posto,
+        patente_id: u.patente_id,
+        patente_sigla: u.patente?.sigla ?? null,
       }));
       ok(res, 'Militares listados.', data);
     } catch (e) { handle(res, next, e); }

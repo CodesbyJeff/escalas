@@ -56,7 +56,7 @@ export const adminService = {
           lotacoes: { some: { lotacao_id: filtro.lotacao_id } },
         }),
       },
-      include: { roles: true },
+      include: { roles: true, patente: true },
       take: 100,
       orderBy: { nome: 'asc' },
     });

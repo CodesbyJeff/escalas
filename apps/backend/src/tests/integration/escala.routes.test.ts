@@ -170,6 +170,12 @@ describe('GET /api/v1/escalas/:id/militares', () => {
     });
     await testPrisma.userLotacao.create({ data: { user_id: bruno.id, lotacao_id: lot.id, nivel: 3 } });
 
+    // Patente vinculada à Ana Paula
+    const patente = await testPrisma.patente.create({
+      data: { id: 12, forca_id: 1, sigla: '1º SGT', nome: 'Primeiro Sargento', ordem: 1 },
+    });
+    await testPrisma.user.update({ where: { id: anaPaula.id }, data: { patente_id: patente.id } });
+
     // Forasteiro sem nenhuma role na lotação
     const forasteiro = await testPrisma.user.create({
       data: { cpf: `FOR${lotId}`, nome: 'Forasteiro', last_sync_at: new Date() },
@@ -208,6 +214,8 @@ describe('GET /api/v1/escalas/:id/militares', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(resBusca.body.data).toHaveLength(1);
     expect(resBusca.body.data[0].nome).toBe('Ana Paula');
+    expect(resBusca.body.data[0].patente_id).toBe(12);
+    expect(resBusca.body.data[0].patente_sigla).toBe('1º SGT');
   });
 
   it('403 para usuário sem papel na lotação da escala', async () => {
