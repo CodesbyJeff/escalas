@@ -2,6 +2,7 @@ export interface TemplateVagaSugeridaDTO {
   id: number;
   funcao: string;
   quantidade_sugerida: number;
+  patentes_esperadas: number[];
 }
 
 export interface TemplateGuarnicaoDTO {

@@ -5,6 +5,7 @@ const horarioHHmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Formato esper
 export const vagaSugeridaInputSchema = z.object({
   funcao: z.string().trim().min(1, 'Função obrigatória').max(60),
   quantidade_sugerida: z.number().int().positive().max(50),
+  patentes_esperadas: z.array(z.number().int().positive()).max(72).optional(),
 });
 
 export const guarnicaoTemplateInputSchema = z.object({
