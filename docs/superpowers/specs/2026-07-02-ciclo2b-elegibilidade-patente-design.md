@@ -53,26 +53,35 @@ Seeder novo (`patentes.seeder.ts`) replica **verbatim** o array `patentes()` do 
 - Backfill dos ~4.700 usuários já sincronizados: reexecutar `pnpm --filter backend bulk-sync` (o snapshot `/external` já traz `_patente`) — sem mudança no SISBOM.
 - `MilitarDTO.posto` (já existente, hoje sempre null) permanece; **adicionamos `patente_id` e `patente_sigla`** ao DTO para a UI.
 
-### 3. `FuncaoPatente` (catálogo — camadas Global + Lotação)
+### 3. `FuncaoPatente` (catálogo — **as três camadas numa tabela só**)
 ```prisma
 model FuncaoPatente {
   id          Int      @id @default(autoincrement())
-  lotacao_id  Int?                    // null = GLOBAL; setado = por lotação
+  lotacao_id  Int?                    // camada LOTAÇÃO (setado)
+  template_id Int?                    // camada LAYOUT (setado)
   funcao_norm String                  // função normalizada
-  patente_ids Int[]                   // patentes esperadas (ids de Patente)
-  lotacao     Lotacao? @relation(fields: [lotacao_id], references: [id])
-  @@unique([lotacao_id, funcao_norm])
+  patente_ids Int[]                   // patentes esperadas (ids de Patente); [] = silencia
+  lotacao     Lotacao?         @relation(fields: [lotacao_id], references: [id], onDelete: Cascade)
+  template    TemplateLotacao? @relation(fields: [template_id], references: [id], onDelete: Cascade)
 }
 ```
-> `@@unique` com `lotacao_id` nulo: no Postgres, `NULL` não colide em unique, então pode haver múltiplas linhas globais com a mesma `funcao_norm`. Mitigação: a camada de escrita (service) garante uma linha global por `funcao_norm` (checa existência antes de criar); documentar. (Alternativa considerada — sentinela `lotacao_id = 0` — descartada por exigir uma Lotação fantasma.)
+Escopo pela combinação de chaves (a **existência da linha** = "a regra existe", o que substitui o `null`-vs-ausente):
+- **GLOBAL:** `lotacao_id` nulo, `template_id` nulo.
+- **LOTAÇÃO:** `lotacao_id` setado, `template_id` nulo.
+- **LAYOUT:** `template_id` setado.
 
-### 4. `TemplateVagaSugerida.patentes_esperadas` (camada Layout)
-```prisma
-  patentes_esperadas Int[]?          // null = herda do catálogo; setado = regra do layout
-```
-Autorada inline no editor de layout (replace-all já vigente cuida da persistência). É a camada mais específica.
+> **Por que uma tabela só (e não uma coluna `Int[]?` na TemplateVagaSugerida):** o Prisma **não suporta scalar list opcional** (`Int[]?` é inválido; listas escalares são sempre não-nulas, default `[]`), então não dá para expressar "null = herda" numa coluna de array. Unificar na `FuncaoPatente` resolve isso (linha existe = regra) e ainda deixa a cascata num mecanismo único.
+>
+> **Unicidade por escopo:** como `NULL` não deduplica em `@@unique` do Postgres, a unicidade vem de **índices únicos parciais** escritos à mão na migration:
+> - `WHERE lotacao_id IS NULL AND template_id IS NULL` sobre `(funcao_norm)` — global
+> - `WHERE lotacao_id IS NOT NULL AND template_id IS NULL` sobre `(lotacao_id, funcao_norm)` — lotação
+> - `WHERE template_id IS NOT NULL` sobre `(template_id, funcao_norm)` — layout
+>
+> O service ainda checa existência antes de criar para devolver 409 amigável. (Prisma ignora índices que não conhece — ok.)
 
-**Migration `0011`** (SQL à mão, sem shadow DB, aplicada com `migrate deploy` em dev+test): cria `Patente`, adiciona `User.patente_id` (+FK), cria `FuncaoPatente`, adiciona `TemplateVagaSugerida.patentes_esperadas`.
+A camada **LAYOUT** é autorada no editor de layout (2b.2): ao salvar o layout, o `layoutService` sincroniza as linhas `FuncaoPatente(template_id=<layout>)` daquele template. No 2b.1 a resolução já consulta essa camada, mas não há UI para criá-la ainda.
+
+**Migration `0011`** (SQL à mão, sem shadow DB, aplicada com `migrate deploy` em dev+test): cria `Patente`, adiciona `User.patente_id` (+FK), cria `FuncaoPatente` + os 3 índices únicos parciais.
 
 ## Resolução + aviso (backend)
 
@@ -86,10 +95,10 @@ Service novo `patente.service.ts`:
 // Retorna as patentes esperadas para uma vaga, aplicando a cascata. null = sem regra.
 esperadasPara(funcao: string, lotacao_id: number, template_id: number | null, prisma): Promise<number[] | null>
 ```
-Ordem de resolução:
-1. Se `template_id` != null: buscar no template a `TemplateVagaSugerida` cuja `normalizeFuncao(funcao)` bate e `patentes_esperadas != null` → retorna ela.
-2. `FuncaoPatente(lotacao_id = <lotação>, funcao_norm)` → retorna `patente_ids`.
-3. `FuncaoPatente(lotacao_id = null, funcao_norm)` → retorna `patente_ids`.
+Ordem de resolução (primeira linha encontrada vence):
+1. Se `template_id` != null: `FuncaoPatente(template_id = <layout>, funcao_norm)` → `patente_ids` (LAYOUT).
+2. `FuncaoPatente(lotacao_id = <lotação>, template_id = null, funcao_norm)` → `patente_ids` (LOTAÇÃO).
+3. `FuncaoPatente(lotacao_id = null, template_id = null, funcao_norm)` → `patente_ids` (GLOBAL).
 4. `null`.
 
 > Um conjunto **vazio** (`[]`) numa regra explícita significa "sem restrição / silencia o aviso" e é distinto de `null` (herda). A resolução para na primeira camada que retorna não-null, mesmo que `[]`.
@@ -116,14 +125,14 @@ Regra de aviso por vaga preenchida:
 ## Escopo / ordem de construção
 
 **2b.1 — núcleo (este slice):**
-- `Patente` + seeder; migration 0011 (Patente, User.patente_id, FuncaoPatente, coluna em TemplateVagaSugerida — a coluna entra já, o uso vem no 2b.2).
+- `Patente` + seeder; migration 0011 (Patente, User.patente_id, FuncaoPatente + 3 índices únicos parciais).
 - Sync grava `patente_id`; backfill via bulk-sync.
-- `FuncaoPatente` (Global + Lotação) + CRUD + guard.
-- `normalizeFuncao`, `patente.service.esperadasPara` (camadas lotação+global; a camada layout retorna cedo só quando houver coluna preenchida — já suportada, mas sem UI ainda).
+- `FuncaoPatente` CRUD para escopos Global + Lotação (template_id sempre null aqui) + guard.
+- `normalizeFuncao`, `patente.service.esperadasPara` (a resolução já inclui a camada LAYOUT por `template_id`, mas sem UI para criá-la ainda).
 - Surfaces: `MilitarDTO` (+patente), `VagaDTO` (+patentes_esperadas, +aviso_patente), MilitarPicker (destaque), editor do dia (badge + notificação), catálogo admin.
 
 **2b.2 — camada layout + gestor:**
-- UI de `patentes_esperadas` no editor de layout.
+- UI no editor de layout que sincroniza linhas `FuncaoPatente(template_id=...)`.
 - Lista de divergências na tela de aprovação.
 
 ## Fora de escopo (YAGNI)
