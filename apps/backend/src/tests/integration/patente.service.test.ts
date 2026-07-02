@@ -38,6 +38,13 @@ describe('patenteService.esperadasPara (cascata)', () => {
     expect(await patenteService.esperadasPara('Comandante', lot.id, tpl.id, testPrisma)).toEqual([4]);
   });
 
+  it('camada com patente_ids vazio VENCE e não cai para a de baixo (silencia)', async () => {
+    const { lot, tpl } = await cenario();
+    await testPrisma.funcaoPatente.create({ data: { funcao_norm: 'COMANDANTE', patente_ids: [12] } });
+    await testPrisma.funcaoPatente.create({ data: { lotacao_id: lot.id, funcao_norm: 'COMANDANTE', patente_ids: [] } });
+    expect(await patenteService.esperadasPara('Comandante', lot.id, tpl.id, testPrisma)).toEqual([]);
+  });
+
   it('template_id null ignora a camada layout', async () => {
     const { lot } = await cenario();
     await testPrisma.funcaoPatente.create({ data: { funcao_norm: 'COMANDANTE', patente_ids: [12] } });
