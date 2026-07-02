@@ -11,15 +11,30 @@ it('mostra os itens de navegação do escalante', () => {
 
 describe('navFlags', () => {
   it('super-admin vê execução, validação e layouts', () => {
-    expect(navFlags({ is_super_admin: true, roles: [] } as any)).toEqual({ canExecutar: true, canValidar: true, canLayouts: true });
+    expect(navFlags({ is_super_admin: true, roles: [] } as any)).toEqual({ canExecutar: true, canValidar: true, canLayouts: true, sa: true });
   });
   it('FISCAL vê execução; GESTOR vê validação; ESCALANTE vê layouts', () => {
-    expect(navFlags({ is_super_admin: false, roles: [{ role: 'FISCAL', lotacao_id: 1 }] } as any)).toEqual({ canExecutar: true, canValidar: false, canLayouts: false });
-    expect(navFlags({ is_super_admin: false, roles: [{ role: 'GESTOR', lotacao_id: 1 }] } as any)).toEqual({ canExecutar: false, canValidar: true, canLayouts: false });
-    expect(navFlags({ is_super_admin: false, roles: [{ role: 'ESCALANTE', lotacao_id: 1 }] } as any)).toEqual({ canExecutar: false, canValidar: false, canLayouts: true });
+    expect(navFlags({ is_super_admin: false, roles: [{ role: 'FISCAL', lotacao_id: 1 }] } as any)).toEqual({ canExecutar: true, canValidar: false, canLayouts: false, sa: false });
+    expect(navFlags({ is_super_admin: false, roles: [{ role: 'GESTOR', lotacao_id: 1 }] } as any)).toEqual({ canExecutar: false, canValidar: true, canLayouts: false, sa: false });
+    expect(navFlags({ is_super_admin: false, roles: [{ role: 'ESCALANTE', lotacao_id: 1 }] } as any)).toEqual({ canExecutar: false, canValidar: false, canLayouts: true, sa: false });
   });
   it('usuário sem papéis não vê nenhum', () => {
-    expect(navFlags({ is_super_admin: false, roles: [] } as any)).toEqual({ canExecutar: false, canValidar: false, canLayouts: false });
+    expect(navFlags({ is_super_admin: false, roles: [] } as any)).toEqual({ canExecutar: false, canValidar: false, canLayouts: false, sa: false });
+  });
+});
+
+describe('AppShellNav — item de super-admin', () => {
+  it('mostra "Elegibilidade (Funções)" quando sa', () => {
+    renderWithProviders(
+      <AppShellNav nome="A" papel="Administrador" canExecutar canValidar canLayouts sa onLogout={() => {}} />,
+    );
+    expect(screen.getByText('Elegibilidade (Funções)')).toBeInTheDocument();
+  });
+  it('esconde "Elegibilidade (Funções)" quando não sa', () => {
+    renderWithProviders(
+      <AppShellNav nome="A" papel="x" canExecutar={false} canValidar={false} canLayouts={false} sa={false} onLogout={() => {}} />,
+    );
+    expect(screen.queryByText('Elegibilidade (Funções)')).not.toBeInTheDocument();
   });
 });
 

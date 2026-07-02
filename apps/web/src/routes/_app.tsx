@@ -14,7 +14,7 @@ function AppLayout() {
   const navigate = useNavigate();
   if (loading) return <Center mih="100vh"><Loader /></Center>;
   const papel = user?.is_super_admin ? 'Administrador' : 'Operador';
-  const { canExecutar, canValidar, canLayouts } = navFlags(user);
+  const { canExecutar, canValidar, canLayouts, sa } = navFlags(user);
   return (
     <AppShellNav
       nome={user?.nome ?? ''}
@@ -22,6 +22,7 @@ function AppLayout() {
       canExecutar={canExecutar}
       canValidar={canValidar}
       canLayouts={canLayouts}
+      sa={sa}
       onLogout={() => { logout(); navigate({ to: '/login' }); }}
     />
   );

@@ -1,22 +1,23 @@
 import { AppShell, Burger, Group, NavLink, Text, ActionIcon, Avatar } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconClipboardCheck, IconLogout, IconGavel, IconTemplate } from '@tabler/icons-react';
+import { IconLayoutDashboard, IconCalendar, IconShieldCheck, IconClipboardCheck, IconLogout, IconGavel, IconTemplate, IconUserCheck } from '@tabler/icons-react';
 import { Link, Outlet } from '@tanstack/react-router';
 import { type ReactNode } from 'react';
 import type { AuthUser } from '@escalas/shared-types';
 
-export function navFlags(user: AuthUser | null): { canExecutar: boolean; canValidar: boolean; canLayouts: boolean } {
+export function navFlags(user: AuthUser | null): { canExecutar: boolean; canValidar: boolean; canLayouts: boolean; sa: boolean } {
   const roles = user?.roles ?? [];
   const sa = user?.is_super_admin ?? false;
   return {
     canExecutar: sa || roles.some((r) => r.role === 'FISCAL'),
     canValidar: sa || roles.some((r) => r.role === 'GESTOR'),
     canLayouts: sa || roles.some((r) => r.role === 'ESCALANTE'),
+    sa,
   };
 }
 
-export function AppShellNav({ nome, papel, canExecutar, canValidar, canLayouts, onLogout, children }: {
-  nome: string; papel: string; canExecutar: boolean; canValidar: boolean; canLayouts: boolean; onLogout: () => void; children?: ReactNode;
+export function AppShellNav({ nome, papel, canExecutar, canValidar, canLayouts, sa, onLogout, children }: {
+  nome: string; papel: string; canExecutar: boolean; canValidar: boolean; canLayouts: boolean; sa?: boolean; onLogout: () => void; children?: ReactNode;
 }) {
   const [opened, { toggle }] = useDisclosure();
   return (
@@ -48,6 +49,7 @@ export function AppShellNav({ nome, papel, canExecutar, canValidar, canLayouts, 
         {canValidar && (
           <NavLink component={Link} to="/aprovacao" label="Aprovação de Escalas" c="white" leftSection={<IconGavel size={18} />} />
         )}
+        {sa && <NavLink component={Link} to="/funcao-patentes" label="Elegibilidade (Funções)" c="white" leftSection={<IconUserCheck size={18} />} />}
       </AppShell.Navbar>
       <AppShell.Main>{children ?? <Outlet />}</AppShell.Main>
     </AppShell>

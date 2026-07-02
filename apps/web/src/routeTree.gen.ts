@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppPainelRouteImport } from './routes/_app/painel'
 import { Route as AppValidacaoIndexRouteImport } from './routes/_app/validacao/index'
 import { Route as AppLayoutsIndexRouteImport } from './routes/_app/layouts/index'
+import { Route as AppFuncaoPatentesIndexRouteImport } from './routes/_app/funcao-patentes.index'
 import { Route as AppExecucaoIndexRouteImport } from './routes/_app/execucao/index'
 import { Route as AppEscalasIndexRouteImport } from './routes/_app/escalas/index'
 import { Route as AppAprovacaoIndexRouteImport } from './routes/_app/aprovacao/index'
@@ -53,6 +54,11 @@ const AppValidacaoIndexRoute = AppValidacaoIndexRouteImport.update({
 const AppLayoutsIndexRoute = AppLayoutsIndexRouteImport.update({
   id: '/layouts/',
   path: '/layouts/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFuncaoPatentesIndexRoute = AppFuncaoPatentesIndexRouteImport.update({
+  id: '/funcao-patentes/',
+  path: '/funcao-patentes/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppExecucaoIndexRoute = AppExecucaoIndexRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/aprovacao/': typeof AppAprovacaoIndexRoute
   '/escalas/': typeof AppEscalasIndexRoute
   '/execucao/': typeof AppExecucaoIndexRoute
+  '/funcao-patentes/': typeof AppFuncaoPatentesIndexRoute
   '/layouts/': typeof AppLayoutsIndexRoute
   '/validacao/': typeof AppValidacaoIndexRoute
   '/aprovacao/escalas/$id': typeof AppAprovacaoEscalasIdRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/aprovacao': typeof AppAprovacaoIndexRoute
   '/escalas': typeof AppEscalasIndexRoute
   '/execucao': typeof AppExecucaoIndexRoute
+  '/funcao-patentes': typeof AppFuncaoPatentesIndexRoute
   '/layouts': typeof AppLayoutsIndexRoute
   '/validacao': typeof AppValidacaoIndexRoute
   '/aprovacao/escalas/$id': typeof AppAprovacaoEscalasIdRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/_app/aprovacao/': typeof AppAprovacaoIndexRoute
   '/_app/escalas/': typeof AppEscalasIndexRoute
   '/_app/execucao/': typeof AppExecucaoIndexRoute
+  '/_app/funcao-patentes/': typeof AppFuncaoPatentesIndexRoute
   '/_app/layouts/': typeof AppLayoutsIndexRoute
   '/_app/validacao/': typeof AppValidacaoIndexRoute
   '/_app/aprovacao/escalas/$id': typeof AppAprovacaoEscalasIdRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/aprovacao/'
     | '/escalas/'
     | '/execucao/'
+    | '/funcao-patentes/'
     | '/layouts/'
     | '/validacao/'
     | '/aprovacao/escalas/$id'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/aprovacao'
     | '/escalas'
     | '/execucao'
+    | '/funcao-patentes'
     | '/layouts'
     | '/validacao'
     | '/aprovacao/escalas/$id'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/_app/aprovacao/'
     | '/_app/escalas/'
     | '/_app/execucao/'
+    | '/_app/funcao-patentes/'
     | '/_app/layouts/'
     | '/_app/validacao/'
     | '/_app/aprovacao/escalas/$id'
@@ -261,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/layouts'
       fullPath: '/layouts/'
       preLoaderRoute: typeof AppLayoutsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/funcao-patentes/': {
+      id: '/_app/funcao-patentes/'
+      path: '/funcao-patentes'
+      fullPath: '/funcao-patentes/'
+      preLoaderRoute: typeof AppFuncaoPatentesIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/execucao/': {
@@ -358,6 +377,7 @@ interface AppRouteChildren {
   AppAprovacaoIndexRoute: typeof AppAprovacaoIndexRoute
   AppEscalasIndexRoute: typeof AppEscalasIndexRoute
   AppExecucaoIndexRoute: typeof AppExecucaoIndexRoute
+  AppFuncaoPatentesIndexRoute: typeof AppFuncaoPatentesIndexRoute
   AppLayoutsIndexRoute: typeof AppLayoutsIndexRoute
   AppValidacaoIndexRoute: typeof AppValidacaoIndexRoute
   AppAprovacaoEscalasIdRoute: typeof AppAprovacaoEscalasIdRoute
@@ -373,6 +393,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAprovacaoIndexRoute: AppAprovacaoIndexRoute,
   AppEscalasIndexRoute: AppEscalasIndexRoute,
   AppExecucaoIndexRoute: AppExecucaoIndexRoute,
+  AppFuncaoPatentesIndexRoute: AppFuncaoPatentesIndexRoute,
   AppLayoutsIndexRoute: AppLayoutsIndexRoute,
   AppValidacaoIndexRoute: AppValidacaoIndexRoute,
   AppAprovacaoEscalasIdRoute: AppAprovacaoEscalasIdRoute,
