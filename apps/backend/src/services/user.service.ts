@@ -47,6 +47,7 @@ export const userService = {
       sisbom_id,
       ativo: data.ativo === undefined ? true : Boolean(data.ativo),
       sisbom_lotacao_ref: lotacaoRef || null,
+      patente_id: data._patente != null ? Number(data._patente) : null,
       last_sync_at: ts,
     };
 

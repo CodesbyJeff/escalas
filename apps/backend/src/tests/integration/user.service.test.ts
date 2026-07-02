@@ -128,4 +128,27 @@ describe('userService.upsertFromSisbom — vínculo de lotação', () => {
     const user = await testPrisma.user.findUnique({ where: { sisbom_id: 'm1' } });
     expect(user).toBeNull();
   });
+
+  it('upsertFromSisbom grava patente_id do _patente', async () => {
+    await resetDb();
+    await testPrisma.patente.create({ data: { id: 12, forca_id: 0, sigla: '1º SGT', nome: '1º Sargento', ordem: 12 } });
+    await userService.upsertFromSisbom(
+      { _id: 'sis-1', str_cpf: '11122233344', pessoa: { str_nome: 'Fulano' }, _patente: 12, _lotacao: '', ativo: true },
+      new Date(),
+      testPrisma,
+    );
+    const u = await testPrisma.user.findUnique({ where: { sisbom_id: 'sis-1' } });
+    expect(u!.patente_id).toBe(12);
+  });
+
+  it('upsertFromSisbom deixa patente_id null quando _patente ausente', async () => {
+    await resetDb();
+    await userService.upsertFromSisbom(
+      { _id: 'sis-2', str_cpf: '55566677788', pessoa: { str_nome: 'Beltrano' }, _lotacao: '', ativo: true },
+      new Date(),
+      testPrisma,
+    );
+    const u = await testPrisma.user.findUnique({ where: { sisbom_id: 'sis-2' } });
+    expect(u!.patente_id).toBeNull();
+  });
 });
