@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Box, Group, Loader, Stack, Title, Text } from '@mantine/core';
 import { escalasApi } from '../../../lib/api/escalas';
 import { SeletorDeDia } from '../../../features/escalas/SeletorDeDia';
+import { AcoesBloco } from '../../../features/escalas/AcoesBloco';
 
 export const Route = createFileRoute('/_app/escalas/$id/')({ component: DetalhePage });
 
@@ -11,6 +12,9 @@ function DetalhePage() {
   const navigate = useNavigate();
   const { data: escala, isLoading } = useQuery({
     queryKey: ['escala-mes', Number(id)], queryFn: () => escalasApi.getMes(Number(id)),
+  });
+  const { data: escalaDetalhe } = useQuery({
+    queryKey: ['escala', Number(id)], queryFn: () => escalasApi.detalhe(Number(id)),
   });
   if (isLoading || !escala) return <Loader />;
   return (
@@ -27,6 +31,12 @@ function DetalhePage() {
         <Box w={16} h={16} bg="yellow.2" style={{ borderRadius: 4 }} />
         <Text size="sm">Tem vaga aberta (DO)</Text>
       </Group>
+      {escalaDetalhe && escalaDetalhe.status === 'rascunho' && (
+        <AcoesBloco
+          escalaId={Number(id)} lotacaoId={escalaDetalhe.lotacao_id}
+          ano={escalaDetalhe.ano} mes={escalaDetalhe.mes}
+        />
+      )}
     </Stack>
   );
 }
