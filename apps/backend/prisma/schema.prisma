@@ -23,6 +23,8 @@ model User {
   email              String?           @unique
   phone              String?
   posto              String?
+  patente_id         Int?
+  patente            Patente?          @relation(fields: [patente_id], references: [id])
   sisbom_id          String?           @unique
   sisbom_lotacao_ref String?
   ativo              Boolean           @default(true)
@@ -62,6 +64,7 @@ model Lotacao {
   user_roles     UserRole[]
   templates      TemplateLotacao[]
   escalas        Escala[]
+  funcao_patentes FuncaoPatente[]
 }
 
 model UserLotacao {
@@ -104,6 +107,7 @@ model TemplateLotacao {
   criado_por User                @relation(fields: [criado_por_id], references: [id])
   guarnicoes TemplateGuarnicao[]
   escalas    Escala[]
+  funcao_patentes FuncaoPatente[]
 
   @@unique([lotacao_id, nome])
   @@index([criado_por_id])
@@ -319,4 +323,23 @@ model ExecucaoVaga {
   observacoes          String?
   created_at           DateTime         @default(now())
   updated_at           DateTime         @updatedAt
+}
+
+model Patente {
+  id        Int    @id
+  forca_id  Int
+  sigla     String
+  nome      String
+  ordem     Int
+  militares User[]
+}
+
+model FuncaoPatente {
+  id          Int              @id @default(autoincrement())
+  lotacao_id  Int?
+  template_id Int?
+  funcao_norm String
+  patente_ids Int[]
+  lotacao     Lotacao?         @relation(fields: [lotacao_id], references: [id], onDelete: Cascade)
+  template    TemplateLotacao? @relation(fields: [template_id], references: [id], onDelete: Cascade)
 }

@@ -17,6 +17,7 @@
     "seed:lotacoes": "tsx src/seeders/lotacoes.seeder.ts",
     "seed:super-admins": "tsx src/seeders/superAdmins.seeder.ts",
     "seed:admin-local": "tsx src/seeders/adminLocal.seeder.ts",
+    "seed:patentes": "tsx src/seeders/patentes.seeder.ts",
     "bulk-sync": "tsx src/cli/bulkSync.ts",
     "reset-sisbom": "tsx src/cli/resetSisbomData.ts"
   },
