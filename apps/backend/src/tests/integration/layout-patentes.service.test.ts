@@ -45,4 +45,12 @@ describe('layoutService — camada patentes', () => {
     const vaga = obtido!.guarnicoes[0]!.vagas_sugeridas[0]! as unknown as { patentes_esperadas: number[] };
     expect(vaga.patentes_esperadas).toEqual([12]);
   });
+
+  it('obter devolve [] para vaga de função sem regra', async () => {
+    const { lot, admin } = await ctx();
+    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', guarnicoes: [guarn('Motorista')] }, testPrisma);
+    const obtido = await layoutService.obter(tpl.id, testPrisma);
+    const vaga = obtido!.guarnicoes[0]!.vagas_sugeridas[0]! as unknown as { patentes_esperadas: number[] };
+    expect(vaga.patentes_esperadas).toEqual([]);
+  });
 });
