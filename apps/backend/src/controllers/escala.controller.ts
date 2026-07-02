@@ -5,6 +5,7 @@ import { HttpError } from '../utils/errors.js';
 import { escalaService } from '../services/escala.service.js';
 import { adminService } from '../services/admin.service.js';
 import { geracaoBlocoService } from '../services/geracaoBloco.service.js';
+import { patenteService } from '../services/patente.service.js';
 import type { MilitarDTO } from '@escalas/shared-types';
 
 function handle(res: Response, next: NextFunction, e: unknown): void {
@@ -152,6 +153,13 @@ export const escalaController = {
         patente_sigla: u.patente?.sigla ?? null,
       }));
       ok(res, 'Militares listados.', data);
+    } catch (e) { handle(res, next, e); }
+  },
+
+  async avisosPatente(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await patenteService.avisosDaEscala(Number(req.params.id), prisma);
+      ok(res, 'Avisos de patente.', data);
     } catch (e) { handle(res, next, e); }
   },
 };

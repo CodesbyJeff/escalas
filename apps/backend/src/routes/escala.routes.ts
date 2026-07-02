@@ -44,6 +44,7 @@ escalaRoutes.get(
 );
 
 escalaRoutes.get('/:id/resumo-servicos', requireEscalaAccess(['ESCALANTE', 'GESTOR']), resumoServicoController.resumo);
+escalaRoutes.get('/:id/avisos-patente', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.avisosPatente);
 
 // Execução / fiscalização
 escalaRoutes.get('/:id/execucao/:data', requireEscalaAccess(['FISCAL', 'GESTOR']), execucaoController.getDia);
