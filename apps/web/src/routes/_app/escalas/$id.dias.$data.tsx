@@ -88,7 +88,7 @@ function EditorDiaForm({ escalaId, data, diaInicial }: { escalaId: number; data:
               getVagaProps={(gix, vix) => draft.getInputProps(`guarnicoes.${gix}.vagas.${vix}.funcao`)}
               setMilitar={(gix, vix, mid) => draft.setFieldValue(`guarnicoes.${gix}.vagas.${vix}.militar_id`, mid)}
               onAddVaga={draft.addVaga} onRemoveVaga={draft.removeVaga} onRemove={draft.removeGuarnicao}
-              getPatentesEsperadas={(gix, vix) => diaInicial.guarnicoes[gix]?.vagas[vix]?.patentes_esperadas ?? null}
+              getPatentesEsperadas={(gix, vix) => draft.values.guarnicoes[gix]?.vagas[vix]?.patentes_esperadas ?? null}
             />
           ))}
         </SimpleGrid>

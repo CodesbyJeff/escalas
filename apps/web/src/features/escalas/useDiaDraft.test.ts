@@ -25,3 +25,19 @@ it('toPutInput devolve o payload do PUT', () => {
   expect(payload.guarnicoes[0]!.sigla).toBe('SLV');
   expect(payload.guarnicoes[0]!.vagas[0]!.funcao).toBe('Comandante');
 });
+
+it('mantém patentes_esperadas por vaga ao remover uma vaga (não desalinha)', () => {
+  const dia = {
+    id: 1, data: '2026-03-15', observacoes: null,
+    guarnicoes: [
+      { id: 1, sigla: 'A', atividade: 'X', viatura_id: null, turno_inicio: '08:00', turno_fim: '08:00', ordem: 0,
+        vagas: [
+          { id: 9, funcao: 'Comandante', militar_id: 100, turno_inicio: '08:00', turno_fim: '08:00', observacoes: null, patentes_esperadas: [12], aviso_patente: false },
+          { id: 10, funcao: 'Motorista', militar_id: 101, turno_inicio: '08:00', turno_fim: '08:00', observacoes: null, patentes_esperadas: [17], aviso_patente: false },
+        ] },
+    ],
+  };
+  const { result } = renderHook(() => useDiaDraft(dia as never));
+  act(() => result.current.removeVaga(0, 0));
+  expect(result.current.values.guarnicoes[0]!.vagas[0]!.patentes_esperadas).toEqual([17]);
+});
