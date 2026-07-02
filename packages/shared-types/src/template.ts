@@ -11,6 +11,7 @@ export interface TemplateGuarnicaoDTO {
   turno_padrao_inicio: string;
   turno_padrao_fim: string;
   ordem: number;
+  ciclo_dias?: number | null;
   vagas_sugeridas: TemplateVagaSugeridaDTO[];
 }
 

@@ -19,6 +19,7 @@ export function LayoutEditor({ draft, onSalvar, salvando }: {
             <TextInput label="Atividade" w={160} {...draft.getInputProps(`guarnicoes.${gi}.atividade`)} />
             <TextInput label="Início" w={90} {...draft.getInputProps(`guarnicoes.${gi}.turno_padrao_inicio`)} />
             <TextInput label="Fim" w={90} {...draft.getInputProps(`guarnicoes.${gi}.turno_padrao_fim`)} />
+            <NumberInput label="Ciclo (dias)" description="24×72 = 4" w={110} min={1} max={31} {...draft.getInputProps(`guarnicoes.${gi}.ciclo_dias`)} />
             <ActionIcon color="red" mt={24} aria-label="Remover guarnição" onClick={() => draft.removeGuarnicao(gi)}><IconTrash size={16} /></ActionIcon>
           </Group>
           <Title order={6} mt="sm">Vagas (função × quantidade)</Title>

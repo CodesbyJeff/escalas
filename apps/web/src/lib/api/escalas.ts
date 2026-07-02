@@ -12,4 +12,8 @@ export const escalasApi = {
   publicar: (id: number) => apiPost<EscalaDTO>(`/escalas/${id}/publicar`),
   getMes: (id: number) => apiGet<EscalaMesDTO>(`/escalas/${id}/mes`),
   deletar: (id: number) => apiDelete<null>(`/escalas/${id}`),
+  gerarBloco: (id: number, body: { data_ini: string; data_fim: string; template_id: number }) =>
+    apiPost<{ dias_afetados: number }>(`/escalas/${id}/gerar-bloco`, body),
+  repetirCiclo: (id: number, body: { ciclo_ini: string; ciclo_fim: string; ate: string }) =>
+    apiPost<{ dias_afetados: number }>(`/escalas/${id}/repetir-ciclo`, body),
 };
