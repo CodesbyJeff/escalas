@@ -14,7 +14,7 @@ it('saúda o usuário e lista guarnições do dia', () => {
 it('exibe o nome do militar na vaga preenchida', () => {
   const dia = { id: 2, data: '2026-03-28', observacoes: null, guarnicoes: [
     { id: 6, sigla: 'INC', atividade: 'Incêndio', viatura_id: null, turno_inicio: '08:00', turno_fim: '17:00', ordem: 0,
-      vagas: [{ id: 20, funcao: 'CB', militar_id: 7, turno_inicio: '08:00', turno_fim: '17:00', observacoes: null }] },
+      vagas: [{ id: 20, funcao: 'CB', militar_id: 7, turno_inicio: '08:00', turno_fim: '17:00', observacoes: null, patentes_esperadas: null, aviso_patente: false }] },
   ] };
   renderWithProviders(
     <PainelView

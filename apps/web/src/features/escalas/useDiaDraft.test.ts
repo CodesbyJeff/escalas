@@ -6,7 +6,7 @@ const dia = {
   guarnicoes: [{
     id: 5, sigla: 'SLV', atividade: 'Salvamento', viatura_id: null,
     turno_inicio: '08:00', turno_fim: '08:00', ordem: 0,
-    vagas: [{ id: 9, funcao: 'Comandante', militar_id: 100, turno_inicio: '08:00', turno_fim: '08:00', observacoes: null }],
+    vagas: [{ id: 9, funcao: 'Comandante', militar_id: 100, turno_inicio: '08:00', turno_fim: '08:00', observacoes: null, patentes_esperadas: null, aviso_patente: false }],
   }],
 };
 
