@@ -7,6 +7,7 @@ import type { EscalaDiaDTO } from '@escalas/shared-types';
 import { putDiaSchema } from '@escalas/shared-schemas';
 import { escalasApi } from '../../../lib/api/escalas';
 import { useDiaDraft } from '../../../features/escalas/useDiaDraft';
+import { contarVagasComAviso } from '../../../features/escalas/avisosPatente';
 import { GuarnicaoCard } from '../../../components/GuarnicaoCard';
 import { ApiError } from '../../../lib/api/client';
 
@@ -40,9 +41,13 @@ function EditorDiaForm({ escalaId, data, diaInicial }: { escalaId: number; data:
       }
       return escalasApi.putDia(escalaId, data, input);
     },
-    onSuccess: () => {
+    onSuccess: (dia) => {
       setConflito(null);
       notifications.show({ message: 'Dia salvo.' });
+      const divergentes = contarVagasComAviso(dia);
+      if (divergentes > 0) {
+        notifications.show({ color: 'yellow', message: `${divergentes} vaga(s) com patente divergente — salvo mesmo assim.` });
+      }
       queryClient.invalidateQueries({ queryKey: ['dia', escalaId, data] });
       queryClient.invalidateQueries({ queryKey: ['escala', escalaId] });
     },
