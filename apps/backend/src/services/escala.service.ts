@@ -5,6 +5,30 @@ import { diasDoMes } from '../utils/calendario.js';
 import { encontrarConflitos } from '../utils/turnos.js';
 import { guarnicoesCreateDoTemplate } from '../utils/estruturaTemplate.js';
 import { auditService } from './audit.service.js';
+import { patenteService } from './patente.service.js';
+
+// Enriquece cada vaga do dia com patentes_esperadas (regra funcao→patente resolvida) e
+// aviso_patente (soft, nunca bloqueia): true só quando a vaga está preenchida e a patente
+// do militar diverge da regra.
+async function enriquecerComPatentes<T extends { guarnicoes: { vagas: { funcao: string; militar_id: number | null }[] }[] }>(
+  dia: T,
+  escala: { lotacao_id: number; template_id: number | null },
+  prisma: PrismaClient,
+): Promise<T> {
+  const militarIds = dia.guarnicoes.flatMap((g) => g.vagas.map((v) => v.militar_id).filter((x): x is number => x != null));
+  const militares = militarIds.length
+    ? await prisma.user.findMany({ where: { id: { in: militarIds } }, select: { id: true, patente_id: true } })
+    : [];
+  const patenteDe = new Map(militares.map((m) => [m.id, m.patente_id] as const));
+  for (const g of dia.guarnicoes) {
+    for (const v of g.vagas as (typeof g.vagas[number] & { patentes_esperadas: number[] | null; aviso_patente: boolean })[]) {
+      const esperadas = await patenteService.esperadasPara(v.funcao, escala.lotacao_id, escala.template_id, prisma);
+      v.patentes_esperadas = esperadas;
+      v.aviso_patente = v.militar_id != null && patenteService.patenteDivergente(patenteDe.get(v.militar_id) ?? null, esperadas);
+    }
+  }
+  return dia;
+}
 
 export const escalaService = {
   async criar(input: CriarEscalaInput, user_id: number, prisma: PrismaClient) {
@@ -118,10 +142,13 @@ export const escalaService = {
   },
 
   async getDia(escala_id: number, dataStr: string, prisma: PrismaClient) {
-    return prisma.escalaDia.findFirst({
+    const dia = await prisma.escalaDia.findFirst({
       where: { escala_id, data: new Date(`${dataStr}T00:00:00.000Z`) },
       include: { guarnicoes: { orderBy: { ordem: 'asc' }, include: { vagas: { orderBy: { id: 'asc' } } } } },
     });
+    if (!dia) return dia;
+    const escala = await prisma.escala.findUniqueOrThrow({ where: { id: escala_id }, select: { lotacao_id: true, template_id: true } });
+    return enriquecerComPatentes(dia, escala, prisma);
   },
 
   async putDia(
@@ -190,7 +217,8 @@ export const escalaService = {
         { user_id, acao: 'editar', entidade: 'EscalaDia', entidade_id: dia.id, antes: antes as never, depois: { guarnicoes: novo.guarnicoes } as never },
         tx,
       );
-      return novo;
+      const escalaInfo = await tx.escala.findUniqueOrThrow({ where: { id: escala_id }, select: { lotacao_id: true, template_id: true } });
+      return enriquecerComPatentes(novo, escalaInfo, tx as unknown as PrismaClient);
     });
   },
 

@@ -7,6 +7,8 @@ export interface VagaDTO {
   turno_inicio: string;
   turno_fim: string;
   observacoes: string | null;
+  patentes_esperadas: number[] | null;
+  aviso_patente: boolean;
 }
 
 export interface EscalaGuarnicaoDTO {

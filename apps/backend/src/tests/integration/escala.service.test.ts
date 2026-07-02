@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { testPrisma } from '../helpers/db.js';
+import { testPrisma, resetDb } from '../helpers/db.js';
 import { escalaService } from '../../services/escala.service.js';
 
 async function seedLotacao(id = 800) {
@@ -288,5 +288,49 @@ describe('escalaService.criar — aplica layout escolhido', () => {
     const dia = await testPrisma.escalaDia.findFirst({ where: { escala_id: esc.id }, include: { guarnicoes: { include: { vagas: true } } } });
     expect(dia!.guarnicoes[0]!.sigla).toBe('ABT');
     expect(dia!.guarnicoes[0]!.vagas).toHaveLength(1);
+  });
+});
+
+describe('escalaService.getDia / putDia — enriquecimento com patentes_esperadas + aviso_patente', () => {
+  it('putDia salva militar com patente divergente sem lançar; getDia expõe patentes_esperadas e aviso_patente conforme o caso', async () => {
+    await resetDb();
+    await testPrisma.patente.createMany({ data: [
+      { id: 12, forca_id: 0, sigla: '1º SGT', nome: '1º Sargento', ordem: 12 },
+      { id: 99, forca_id: 0, sigla: 'SD', nome: 'Soldado', ordem: 17 },
+    ]});
+    const lot = await testPrisma.lotacao.create({ data: { id: 910, sigla: 'L910', nome: 'L', nivel: 3, operacional: true } });
+    const admin = await testPrisma.user.create({ data: { cpf: 'ADM910', nome: 'Adm', last_sync_at: new Date() } });
+    const milA = await testPrisma.user.create({ data: { cpf: 'MILA910', nome: 'A', last_sync_at: new Date(), patente_id: 12 } });
+    const milB = await testPrisma.user.create({ data: { cpf: 'MILB910', nome: 'B', last_sync_at: new Date(), patente_id: 99 } });
+    const tpl = await testPrisma.templateLotacao.create({ data: { lotacao_id: lot.id, nome: 'P', criado_por_id: admin.id,
+      guarnicoes: { create: [{ sigla: 'INC', atividade: 'INCENDIO', turno_padrao_inicio: '08:00', turno_padrao_fim: '08:00', ordem: 0, vagas_sugeridas: { create: [{ funcao: 'Comandante', quantidade_sugerida: 1 }] } }] } } });
+    await testPrisma.funcaoPatente.create({ data: { funcao_norm: 'COMANDANTE', patente_ids: [12] } });
+    const escala = await escalaService.criar({ lotacao_id: lot.id, mes: 9, ano: 2026, template_id: tpl.id }, admin.id, testPrisma);
+    const d1 = await escalaService.getDia(escala.id, '2026-09-01', testPrisma);
+
+    // vaga aberta (militar_id null): patentes_esperadas resolvidas, mas aviso_patente nunca dispara
+    const vagaAberta = d1!.guarnicoes[0]!.vagas[0]! as unknown as { patentes_esperadas: number[] | null; aviso_patente: boolean };
+    expect(vagaAberta.patentes_esperadas).toEqual([12]);
+    expect(vagaAberta.aviso_patente).toBe(false);
+
+    // atribui o militar B (patente 99, diverge) via putDia — não deve lançar (aviso é soft, não bloqueia)
+    await escalaService.putDia(escala.id, '2026-09-01', {
+      guarnicoes: d1!.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, viatura_id: g.viatura_id, turno_inicio: g.turno_inicio, turno_fim: g.turno_fim, ordem: g.ordem,
+        vagas: g.vagas.map((v) => ({ funcao: v.funcao, militar_id: milB.id, turno_inicio: v.turno_inicio, turno_fim: v.turno_fim })) })),
+    }, admin.id, testPrisma);
+    const diaDivergente = await escalaService.getDia(escala.id, '2026-09-01', testPrisma);
+    const vagaDivergente = diaDivergente!.guarnicoes[0]!.vagas[0]! as unknown as { patentes_esperadas: number[] | null; aviso_patente: boolean };
+    expect(vagaDivergente.patentes_esperadas).toEqual([12]);
+    expect(vagaDivergente.aviso_patente).toBe(true);
+
+    // atribui o militar A (patente 12, bate) — aviso some
+    await escalaService.putDia(escala.id, '2026-09-01', {
+      guarnicoes: diaDivergente!.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, viatura_id: g.viatura_id, turno_inicio: g.turno_inicio, turno_fim: g.turno_fim, ordem: g.ordem,
+        vagas: g.vagas.map((v) => ({ funcao: v.funcao, militar_id: milA.id, turno_inicio: v.turno_inicio, turno_fim: v.turno_fim })) })),
+    }, admin.id, testPrisma);
+    const diaOk = await escalaService.getDia(escala.id, '2026-09-01', testPrisma);
+    const vagaOk = diaOk!.guarnicoes[0]!.vagas[0]! as unknown as { patentes_esperadas: number[] | null; aviso_patente: boolean };
+    expect(vagaOk.patentes_esperadas).toEqual([12]);
+    expect(vagaOk.aviso_patente).toBe(false);
   });
 });
