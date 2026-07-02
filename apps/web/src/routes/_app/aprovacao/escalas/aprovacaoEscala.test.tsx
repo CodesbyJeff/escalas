@@ -11,6 +11,7 @@ function mockBase() {
   server.use(
     http.get(`${BASE}/escalas/7/mes`, () => HttpResponse.json({ success: true, message: 'ok', data: { id: 7, mes: 9, ano: 2026, status: 'em_validacao', dias: [{ data: '2026-09-04', vagas_total: 3, vagas_preenchidas: 2 }] } })),
     http.get(`${BASE}/escalas/7/resumo-servicos`, () => HttpResponse.json({ success: true, message: 'ok', data: [{ militar_id: 1, nome: 'Alfa', posto: 'SD', total: 5, semana: 2, fim_semana_feriado: 3 }] })),
+    http.get(`${BASE}/escalas/7/avisos-patente`, () => HttpResponse.json({ success: true, message: 'ok', data: [{ data: '2026-09-01', guarnicao_sigla: 'ABT', funcao: 'Comandante', militar_id: 4, militar_nome: 'SD Fulano', patente_sigla: 'SD', patentes_esperadas: [12] }] })),
   );
 }
 
@@ -20,6 +21,8 @@ it('mostra a prevista (cobertura) e o resumo', async () => {
   expect(await screen.findByText('2026-09-04')).toBeInTheDocument();
   expect(screen.getByText('2/3')).toBeInTheDocument();
   expect(screen.getByText('SD Alfa')).toBeInTheDocument();
+  expect(await screen.findByText('SD Fulano')).toBeInTheDocument();
+  expect(screen.getByText('Comandante')).toBeInTheDocument();
 });
 
 it('aprovar → notificação de sucesso', async () => {

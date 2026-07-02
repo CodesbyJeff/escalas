@@ -20,6 +20,7 @@ function AprovacaoEscalaPage() {
 export function AprovacaoEscalaScreen({ escalaId }: { escalaId: number }) {
   const { data: mes, isLoading: l1 } = useQuery({ queryKey: ['escala', 'mes', escalaId], queryFn: () => escalasApi.getMes(escalaId) });
   const { data: resumo = [], isLoading: l2 } = useQuery({ queryKey: ['resumo-servicos', escalaId], queryFn: () => validacoesApi.resumoServicos(escalaId) });
+  const { data: avisos = [] } = useQuery({ queryKey: ['avisos-patente', escalaId], queryFn: () => validacoesApi.avisosPatente(escalaId) });
   const [rejeitarOpen, rejeitar] = useDisclosure(false);
   const [justificativa, setJustificativa] = useState('');
   const qc = useQueryClient();
@@ -68,6 +69,19 @@ export function AprovacaoEscalaScreen({ escalaId }: { escalaId: number }) {
           <ResumoServicosTable itens={resumo} />
         </Stack>
       </SimpleGrid>
+      <Title order={5} mt="md">Divergências de patente</Title>
+      {avisos.length === 0 ? (
+        <Text c="dimmed" size="sm">Nenhuma divergência de patente.</Text>
+      ) : (
+        <Table striped withTableBorder>
+          <Table.Thead><Table.Tr><Table.Th>Dia</Table.Th><Table.Th>Guarnição</Table.Th><Table.Th>Função</Table.Th><Table.Th>Militar</Table.Th><Table.Th>Patente</Table.Th></Table.Tr></Table.Thead>
+          <Table.Tbody>
+            {avisos.map((a, i) => (
+              <Table.Tr key={i}><Table.Td>{a.data}</Table.Td><Table.Td>{a.guarnicao_sigla}</Table.Td><Table.Td>{a.funcao}</Table.Td><Table.Td>{a.militar_nome}</Table.Td><Table.Td>{a.patente_sigla ?? '—'}</Table.Td></Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      )}
       <Modal opened={rejeitarOpen} onClose={() => { rejeitar.close(); setJustificativa(''); }} title="Rejeitar escala" centered>
         <Stack>
           <Textarea label="Justificativa" placeholder="Descreva o que precisa ser corrigido" minRows={3} maxLength={500} value={justificativa} onChange={(e) => setJustificativa(e.currentTarget.value)} />

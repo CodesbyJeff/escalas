@@ -1,4 +1,4 @@
-import type { EscalaDTO, ResumoServicoDTO, ValidacaoEscalaDTO } from '@escalas/shared-types';
+import type { AvisoPatenteDTO, EscalaDTO, ResumoServicoDTO, ValidacaoEscalaDTO } from '@escalas/shared-types';
 import type { ValidarEscalaInput } from '@escalas/shared-schemas';
 import { apiGet, apiPost } from './client';
 
@@ -7,4 +7,5 @@ export const validacoesApi = {
   resumoServicos: (id: number) => apiGet<ResumoServicoDTO[]>(`/escalas/${id}/resumo-servicos`),
   validar: (id: number, input: ValidarEscalaInput) => apiPost<ValidacaoEscalaDTO>(`/escalas/${id}/validar`, input),
   validacoes: (id: number) => apiGet<ValidacaoEscalaDTO[]>(`/escalas/${id}/validacoes`),
+  avisosPatente: (id: number) => apiGet<AvisoPatenteDTO[]>(`/escalas/${id}/avisos-patente`),
 };
