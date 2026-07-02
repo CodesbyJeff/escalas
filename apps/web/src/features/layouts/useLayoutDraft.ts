@@ -1,7 +1,7 @@
 import { useForm } from '@mantine/form';
 import type { CriarLayoutInput } from '@escalas/shared-schemas';
 
-const novaVaga = () => ({ funcao: '', quantidade_sugerida: 1 });
+const novaVaga = () => ({ funcao: '', quantidade_sugerida: 1, patentes_esperadas: [] as number[] });
 const novaGuarnicao = (ordem: number) => ({ sigla: '', atividade: '', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem, ciclo_dias: undefined as number | undefined, vagas_sugeridas: [novaVaga()] });
 
 export function useLayoutDraft(inicial?: CriarLayoutInput) {

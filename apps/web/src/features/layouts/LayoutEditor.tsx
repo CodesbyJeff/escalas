@@ -1,10 +1,16 @@
-import { Button, Card, Group, NumberInput, Stack, TextInput, Title, ActionIcon } from '@mantine/core';
+import { Button, Card, Group, NumberInput, Stack, TextInput, Title, ActionIcon, MultiSelect } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import { patentesApi } from '../../lib/api/patentes';
 import type { useLayoutDraft } from './useLayoutDraft';
 
 export function LayoutEditor({ draft, onSalvar, salvando }: {
   draft: ReturnType<typeof useLayoutDraft>; onSalvar: () => void; salvando: boolean;
 }) {
+  const { data: patentes = [] } = useQuery({ queryKey: ['patentes'], queryFn: () => patentesApi.listar() });
+  const patenteOpts = [...patentes]
+    .sort((a, b) => a.forca_id - b.forca_id || a.ordem - b.ordem)
+    .map((p) => ({ value: String(p.id), label: `${p.sigla} — ${p.nome}` }));
   return (
     <Stack>
       <Group justify="space-between">
@@ -27,6 +33,11 @@ export function LayoutEditor({ draft, onSalvar, salvando }: {
             <Group key={vi} mt={4}>
               <TextInput placeholder="Função" w={200} {...draft.getInputProps(`guarnicoes.${gi}.vagas_sugeridas.${vi}.funcao`)} />
               <NumberInput w={90} min={1} max={50} {...draft.getInputProps(`guarnicoes.${gi}.vagas_sugeridas.${vi}.quantidade_sugerida`)} />
+              <MultiSelect
+                label="Patentes esperadas" placeholder="(herda da lotação/global)" w={260} data={patenteOpts} searchable clearable
+                value={(draft.values.guarnicoes[gi]!.vagas_sugeridas[vi]!.patentes_esperadas ?? []).map(String)}
+                onChange={(vals) => draft.setFieldValue(`guarnicoes.${gi}.vagas_sugeridas.${vi}.patentes_esperadas`, vals.map(Number))}
+              />
               <ActionIcon variant="subtle" color="red" aria-label="Remover vaga" onClick={() => draft.removeVaga(gi, vi)}><IconTrash size={14} /></ActionIcon>
             </Group>
           ))}
