@@ -6,3 +6,4 @@ export * from './validacao.js';
 export * from './militar.js';
 export * from './execucao.js';
 export * from './me.js';
+export * from './patente.js';

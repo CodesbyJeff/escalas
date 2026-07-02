@@ -13,3 +13,4 @@ adminRoutes.post('/roles', validate(atribuirRoleSchema), adminController.atribui
 adminRoutes.delete('/roles/:id', adminController.removerRole);
 adminRoutes.post('/resync', adminController.resync);
 adminRoutes.post('/bulk-sync', adminController.bulkSync);
+adminRoutes.get('/lotacoes', adminController.listarLotacoes);

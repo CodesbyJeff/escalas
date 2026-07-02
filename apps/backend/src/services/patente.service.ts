@@ -2,6 +2,10 @@ import type { PrismaClient } from '@prisma/client';
 import { normalizeFuncao } from '../utils/funcao.js';
 
 export const patenteService = {
+  async listarTodas(prisma: PrismaClient) {
+    return prisma.patente.findMany({ orderBy: [{ forca_id: 'asc' }, { ordem: 'asc' }] });
+  },
+
   // Resolve as patentes esperadas pela cascata layout → lotação → global. null = sem regra.
   async esperadasPara(
     funcao: string,

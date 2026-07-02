@@ -56,4 +56,13 @@ export const adminController = {
       next(e);
     }
   },
+
+  async listarLotacoes(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const lotacoes = await adminService.listarLotacoes(prisma);
+      ok(res, 'Lotações listadas.', lotacoes);
+    } catch (e) {
+      next(e);
+    }
+  },
 };

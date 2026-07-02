@@ -61,4 +61,8 @@ export const adminService = {
       orderBy: { nome: 'asc' },
     });
   },
+
+  async listarLotacoes(prisma: PrismaClient) {
+    return prisma.lotacao.findMany({ orderBy: { nome: 'asc' }, select: { id: true, sigla: true, nome: true } });
+  },
 };
