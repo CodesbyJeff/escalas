@@ -10,10 +10,12 @@ export async function resetDb(): Promise<void> {
   await testPrisma.escalaVersao.deleteMany();
   await testPrisma.execucaoVaga.deleteMany(); // antes de Vaga (FK)
   await testPrisma.escala.deleteMany(); // cascateia dia/guarnicao/vaga
+  await testPrisma.funcaoPatente.deleteMany(); // antes de template/lotacao (FK); globais não cascateiam
   await testPrisma.templateLotacao.deleteMany(); // cascateia guarnicao/vaga template
   await testPrisma.userRole.deleteMany();
   await testPrisma.userLotacao.deleteMany();
   await testPrisma.user.deleteMany();
+  await testPrisma.patente.deleteMany(); // depois de User (User.patente_id → SET NULL)
   await testPrisma.lotacao.deleteMany();
   await testPrisma.syncCursor.deleteMany();
   await testPrisma.feriado.deleteMany();
