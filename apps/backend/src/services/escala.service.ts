@@ -6,6 +6,7 @@ import { encontrarConflitos } from '../utils/turnos.js';
 import { guarnicoesCreateDoTemplate } from '../utils/estruturaTemplate.js';
 import { auditService } from './audit.service.js';
 import { patenteService } from './patente.service.js';
+import { normalizeFuncao } from '../utils/funcao.js';
 
 // Enriquece cada vaga do dia com patentes_esperadas (regra funcao→patente resolvida) e
 // aviso_patente (soft, nunca bloqueia): true só quando a vaga está preenchida e a patente
@@ -20,9 +21,15 @@ async function enriquecerComPatentes<T extends { guarnicoes: { vagas: { funcao: 
     ? await prisma.user.findMany({ where: { id: { in: militarIds } }, select: { id: true, patente_id: true } })
     : [];
   const patenteDe = new Map(militares.map((m) => [m.id, m.patente_id] as const));
+  const memo = new Map<string, number[] | null>();
+  const esperadasMemo = async (funcao: string) => {
+    const k = normalizeFuncao(funcao);
+    if (!memo.has(k)) memo.set(k, await patenteService.esperadasPara(funcao, escala.lotacao_id, escala.template_id, prisma));
+    return memo.get(k)!;
+  };
   for (const g of dia.guarnicoes) {
     for (const v of g.vagas as (typeof g.vagas[number] & { patentes_esperadas: number[] | null; aviso_patente: boolean })[]) {
-      const esperadas = await patenteService.esperadasPara(v.funcao, escala.lotacao_id, escala.template_id, prisma);
+      const esperadas = await esperadasMemo(v.funcao);
       v.patentes_esperadas = esperadas;
       v.aviso_patente = v.militar_id != null && patenteService.patenteDivergente(patenteDe.get(v.militar_id) ?? null, esperadas);
     }

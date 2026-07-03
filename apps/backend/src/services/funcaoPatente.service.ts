@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import type { CriarFuncaoPatenteInput, AtualizarFuncaoPatenteInput } from '@escalas/shared-schemas';
 import { ConflictError, NotFoundError } from '../utils/errors.js';
 import { normalizeFuncao } from '../utils/funcao.js';
@@ -17,9 +17,16 @@ export const funcaoPatenteService = {
     const funcao_norm = normalizeFuncao(input.funcao);
     const existe = await prisma.funcaoPatente.findFirst({ where: { lotacao_id, template_id: null, funcao_norm } });
     if (existe) throw new ConflictError('Já existe regra para essa função neste escopo.');
-    return prisma.funcaoPatente.create({
-      data: { lotacao_id, template_id: null, funcao_norm, patente_ids: input.patente_ids },
-    });
+    try {
+      return await prisma.funcaoPatente.create({
+        data: { lotacao_id, template_id: null, funcao_norm, patente_ids: input.patente_ids },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictError('Já existe regra para essa função neste escopo.');
+      }
+      throw e;
+    }
   },
 
   async atualizar(id: number, input: AtualizarFuncaoPatenteInput, prisma: PrismaClient) {

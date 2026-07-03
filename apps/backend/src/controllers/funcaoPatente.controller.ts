@@ -23,7 +23,8 @@ export const funcaoPatenteController = {
   },
   async listar(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const lotacao_id = req.query.lotacao_id ? Number(req.query.lotacao_id) : undefined;
+      const raw = req.query.lotacao_id ? Number(req.query.lotacao_id) : undefined;
+      const lotacao_id = raw != null && !Number.isNaN(raw) ? raw : undefined;
       ok(res, 'Regras listadas.', await funcaoPatenteService.listar(lotacao_id, prisma));
     } catch (e) {
       next(e);

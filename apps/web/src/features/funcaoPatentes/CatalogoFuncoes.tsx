@@ -25,12 +25,9 @@ import { ApiError } from '../../lib/api/client';
 type Escopo = 'global' | 'lotacao';
 
 function patentesParaMultiSelect(patentes: PatenteDTO[]) {
-  const grupos = new Map<number, { group: string; items: { value: string; label: string }[] }>();
-  for (const p of [...patentes].sort((a, b) => a.ordem - b.ordem)) {
-    if (!grupos.has(p.forca_id)) grupos.set(p.forca_id, { group: `Força ${p.forca_id}`, items: [] });
-    grupos.get(p.forca_id)!.items.push({ value: String(p.id), label: `${p.sigla} — ${p.nome}` });
-  }
-  return Array.from(grupos.values());
+  return [...patentes]
+    .sort((a, b) => a.forca_id - b.forca_id || a.ordem - b.ordem)
+    .map((p) => ({ value: String(p.id), label: `${p.sigla} — ${p.nome}` }));
 }
 
 export function CatalogoFuncoes() {
