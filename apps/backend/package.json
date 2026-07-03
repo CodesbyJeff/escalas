@@ -19,7 +19,8 @@
     "seed:admin-local": "tsx src/seeders/adminLocal.seeder.ts",
     "seed:patentes": "tsx src/seeders/patentes.seeder.ts",
     "bulk-sync": "tsx src/cli/bulkSync.ts",
-    "reset-sisbom": "tsx src/cli/resetSisbomData.ts"
+    "reset-sisbom": "tsx src/cli/resetSisbomData.ts",
+    "gerar-layouts": "tsx src/cli/gerarLayoutsMapaForca.ts"
   },
   "dependencies": {
     "@escalas/shared-types": "workspace:*",
