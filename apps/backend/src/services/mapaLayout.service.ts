@@ -1,4 +1,7 @@
+import type { PrismaClient } from '@prisma/client';
 import type { MapaGuarnicaoDoc } from '../integrations/sisbom/types.js';
+import { layoutService } from './template.service.js';
+import { logger } from '../utils/logger.js';
 
 export interface VagaLayout { funcao: string; quantidade_sugerida: number }
 export interface GuarnicaoLayout {
@@ -66,3 +69,37 @@ export function agregarLayout(docs: MapaGuarnicaoDoc[]): { guarnicoes: Guarnicao
   });
   return { guarnicoes };
 }
+
+const NOME_LAYOUT = 'Padrão (mapa de força)';
+
+export const mapaLayoutService = {
+  // Cria/atualiza o layout "Padrão (mapa de força)" da lotação a partir dos docs.
+  // Idempotente: se já existe layout com esse nome, faz replace-all; senão cria.
+  async gerarParaLotacao(lotacao_id: number, user_id: number, docs: MapaGuarnicaoDoc[], prisma: PrismaClient) {
+    const { guarnicoes } = agregarLayout(docs);
+    if (!guarnicoes.length) { logger.info('mapa_layout_skip_sem_docs', { lotacao_id }); return null; }
+    const existentes = await layoutService.listarPorLotacao(lotacao_id, prisma);
+    const atual = existentes.find((t) => t.nome === NOME_LAYOUT);
+    const input = { nome: NOME_LAYOUT, guarnicoes };
+    if (atual) return layoutService.atualizar(atual.id, user_id, input, prisma);
+    return layoutService.criar(lotacao_id, user_id, input, prisma);
+  },
+
+  // Roda a geração para todas as lotações operacionais reais com efetivo.
+  // `buscarDocs(lotacao)` devolve os docs do mapa de força daquela lotação
+  // (o CLI injeta a busca via snapshot; o teste injeta um stub).
+  async gerarTodas(user_id: number, buscarDocs: (lotacao: { id: number; sisbom_ref: string }) => Promise<MapaGuarnicaoDoc[]>, prisma: PrismaClient) {
+    const lots = await prisma.lotacao.findMany({
+      where: { sisbom_ref: { not: null }, operacional: true, user_lotacoes: { some: {} } },
+      select: { id: true, sisbom_ref: true },
+    });
+    let feitas = 0;
+    for (const lot of lots) {
+      const docs = await buscarDocs({ id: lot.id, sisbom_ref: lot.sisbom_ref! });
+      const r = await this.gerarParaLotacao(lot.id, user_id, docs, prisma);
+      if (r) feitas++;
+    }
+    logger.info('mapa_layout_gerar_todas_done', { lotacoes: lots.length, feitas });
+    return { lotacoes: lots.length, feitas };
+  },
+};
