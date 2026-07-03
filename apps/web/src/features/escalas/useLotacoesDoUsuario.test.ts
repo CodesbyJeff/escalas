@@ -31,3 +31,21 @@ it('deduplica lotacao_id repetido', () => {
   const result = mapRolesToLotacoes(roles);
   expect(result).toHaveLength(1);
 });
+
+it('usa o nome real da lotação quando o mapa id→nome é fornecido', () => {
+  const roles: AuthUser['roles'] = [
+    { role: 'ESCALANTE', lotacao_id: 132 },
+    { role: 'ESCALANTE', lotacao_id: 174 },
+  ];
+  const result = mapRolesToLotacoes(roles, { 132: 'GBSA', 174: '1º SGB/1º GBM (NATAL)' });
+  expect(result).toEqual([
+    { value: '132', label: 'GBSA' },
+    { value: '174', label: '1º SGB/1º GBM (NATAL)' },
+  ]);
+});
+
+it('cai para "Lotação #<id>" quando o nome não está no mapa', () => {
+  const roles: AuthUser['roles'] = [{ role: 'ESCALANTE', lotacao_id: 99 }];
+  const result = mapRolesToLotacoes(roles, { 132: 'GBSA' });
+  expect(result).toEqual([{ value: '99', label: 'Lotação #99' }]);
+});
