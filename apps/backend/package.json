@@ -20,7 +20,8 @@
     "seed:patentes": "tsx src/seeders/patentes.seeder.ts",
     "bulk-sync": "tsx src/cli/bulkSync.ts",
     "reset-sisbom": "tsx src/cli/resetSisbomData.ts",
-    "gerar-layouts": "tsx src/cli/gerarLayoutsMapaForca.ts"
+    "gerar-layouts": "tsx src/cli/gerarLayoutsMapaForca.ts",
+    "backfill-patentes": "tsx src/cli/backfillPatentes.ts"
   },
   "dependencies": {
     "@escalas/shared-types": "workspace:*",

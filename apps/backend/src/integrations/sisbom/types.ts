@@ -53,6 +53,7 @@ export interface MapaGuarnicaoDoc {
   _lotacao: string;
   atividade?: string | null;
   atividade_extra?: string | null;
+  date_start?: string | null;
   time_start?: string | null;
   time_end?: string | null;
   guarnicao?: MapaGuarnicaoMembro[];
