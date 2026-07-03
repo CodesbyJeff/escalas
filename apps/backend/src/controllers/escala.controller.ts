@@ -6,6 +6,7 @@ import { escalaService } from '../services/escala.service.js';
 import { adminService } from '../services/admin.service.js';
 import { geracaoBlocoService } from '../services/geracaoBloco.service.js';
 import { patenteService } from '../services/patente.service.js';
+import { preenchimentoService } from '../services/preenchimento.service.js';
 import type { MilitarDTO } from '@escalas/shared-types';
 
 function handle(res: Response, next: NextFunction, e: unknown): void {
@@ -160,6 +161,22 @@ export const escalaController = {
     try {
       const data = await patenteService.avisosDaEscala(Number(req.params.id), prisma);
       ok(res, 'Avisos de patente.', data);
+    } catch (e) { handle(res, next, e); }
+  },
+
+  async sugerirPreenchimento(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { data_ini, data_fim, descanso_horas } = req.body;
+      const data = await preenchimentoService.sugerir(Number(req.params.id), data_ini, data_fim, descanso_horas, prisma);
+      ok(res, 'Sugestão de preenchimento calculada.', data);
+    } catch (e) { handle(res, next, e); }
+  },
+
+  async aplicarPreenchimento(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { data_ini, data_fim, descanso_horas } = req.body;
+      const data = await preenchimentoService.aplicar(Number(req.params.id), data_ini, data_fim, descanso_horas, req.user!.id, prisma);
+      ok(res, 'Preenchimento automático aplicado.', data);
     } catch (e) { handle(res, next, e); }
   },
 };

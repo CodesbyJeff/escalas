@@ -3,7 +3,7 @@ import { authMiddleware } from '../middlewares/auth.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { requireEscalaAccess } from '../middlewares/requireEscalaAccess.js';
 import { validate } from '../middlewares/validate.js';
-import { criarEscalaSchema, putDiaSchema, duplicarDiaSchema, validarEscalaSchema, putExecucaoSchema, validarExecucaoSchema, gerarBlocoSchema, repetirCicloSchema } from '@escalas/shared-schemas';
+import { criarEscalaSchema, putDiaSchema, duplicarDiaSchema, validarEscalaSchema, putExecucaoSchema, validarExecucaoSchema, gerarBlocoSchema, repetirCicloSchema, preenchimentoInputSchema } from '@escalas/shared-schemas';
 import { escalaController } from '../controllers/escala.controller.js';
 import { validacaoController } from '../controllers/validacao.controller.js';
 import { execucaoController } from '../controllers/execucao.controller.js';
@@ -28,6 +28,8 @@ escalaRoutes.put('/:id/dias/:data', requireEscalaAccess(['ESCALANTE']), validate
 escalaRoutes.post('/:id/dias/:data/duplicar', requireEscalaAccess(['ESCALANTE']), validate(duplicarDiaSchema), escalaController.duplicarDia);
 escalaRoutes.post('/:id/gerar-bloco', requireEscalaAccess(['ESCALANTE']), validate(gerarBlocoSchema), escalaController.gerarBloco);
 escalaRoutes.post('/:id/repetir-ciclo', requireEscalaAccess(['ESCALANTE']), validate(repetirCicloSchema), escalaController.repetirCiclo);
+escalaRoutes.post('/:id/sugerir-preenchimento', requireEscalaAccess(['ESCALANTE']), validate(preenchimentoInputSchema), escalaController.sugerirPreenchimento);
+escalaRoutes.post('/:id/aplicar-preenchimento', requireEscalaAccess(['ESCALANTE']), validate(preenchimentoInputSchema), escalaController.aplicarPreenchimento);
 escalaRoutes.post('/:id/publicar', requireEscalaAccess(['ESCALANTE']), escalaController.publicar);
 escalaRoutes.delete('/:id', requireEscalaAccess(['ESCALANTE']), escalaController.deletar);
 escalaRoutes.get('/:id/versoes', requireEscalaAccess(['ESCALANTE', 'GESTOR']), escalaController.listarVersoes);
