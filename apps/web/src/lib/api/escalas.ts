@@ -1,4 +1,4 @@
-import type { EscalaDTO, EscalaDiaDTO, EscalaMesDTO } from '@escalas/shared-types';
+import type { EscalaDTO, EscalaDiaDTO, EscalaMesDTO, PreenchimentoSugestaoDTO } from '@escalas/shared-types';
 import type { CriarEscalaInput, PutDiaInput } from '@escalas/shared-schemas';
 import { apiGet, apiPost, apiPut, apiDelete } from './client';
 
@@ -16,4 +16,10 @@ export const escalasApi = {
     apiPost<{ dias_afetados: number }>(`/escalas/${id}/gerar-bloco`, body),
   repetirCiclo: (id: number, body: { ciclo_ini: string; ciclo_fim: string; ate: string }) =>
     apiPost<{ dias_afetados: number }>(`/escalas/${id}/repetir-ciclo`, body),
+  sugerirPreenchimento: (id: number, body: { data_ini: string; data_fim: string; descanso_horas?: number }) =>
+    apiPost<PreenchimentoSugestaoDTO[]>(`/escalas/${id}/sugerir-preenchimento`, body),
+  aplicarPreenchimento: (id: number, body: { data_ini: string; data_fim: string; descanso_horas?: number }) =>
+    apiPost<{ vagas_preenchidas: number; avisos_patente: number; avisos_descanso: number }>(
+      `/escalas/${id}/aplicar-preenchimento`, body,
+    ),
 };

@@ -4,6 +4,7 @@ import { Box, Group, Loader, Stack, Title, Text } from '@mantine/core';
 import { escalasApi } from '../../../lib/api/escalas';
 import { SeletorDeDia } from '../../../features/escalas/SeletorDeDia';
 import { AcoesBloco } from '../../../features/escalas/AcoesBloco';
+import { PreenchimentoAuto } from '../../../features/escalas/PreenchimentoAuto';
 
 export const Route = createFileRoute('/_app/escalas/$id/')({ component: DetalhePage });
 
@@ -36,6 +37,9 @@ function DetalhePage() {
           escalaId={Number(id)} lotacaoId={escalaDetalhe.lotacao_id}
           ano={escalaDetalhe.ano} mes={escalaDetalhe.mes}
         />
+      )}
+      {escalaDetalhe && escalaDetalhe.status === 'rascunho' && (
+        <PreenchimentoAuto escalaId={Number(id)} rascunho={escalaDetalhe.status === 'rascunho'} />
       )}
     </Stack>
   );
