@@ -40,3 +40,20 @@ export interface MapaForcaResponse {
   militares: Record<string, unknown>[];
   resumo: Record<string, unknown> | null;
 }
+
+export interface MapaGuarnicaoMembro {
+  _id?: string;
+  _militar?: string;
+  str_funcao?: string | null;
+  _patente?: number | null;
+  bo_diaria?: boolean;
+}
+
+export interface MapaGuarnicaoDoc {
+  _lotacao: string;
+  atividade?: string | null;
+  atividade_extra?: string | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  guarnicao?: MapaGuarnicaoMembro[];
+}

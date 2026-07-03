@@ -58,6 +58,24 @@ describe('SisbomClient', () => {
     expect(r.has_more).toBe(false);
   });
 
+  it('getSnapshot inclui since na querystring quando informado', async () => {
+    nock(ext.origin)
+      .get(ext.pathname + '/snapshot')
+      .query(q => q.entity === 'mapa-guarnicoes' && q.since === '2026-04-01')
+      .reply(200, { entity: 'mapa-guarnicoes', items: [], skip: 0, limit: 500, has_more: false });
+    const r = await sisbomClient.getSnapshot({ entity: 'mapa-guarnicoes', since: '2026-04-01' });
+    expect(r.entity).toBe('mapa-guarnicoes');
+  });
+
+  it('getSnapshot não envia since quando omitido', async () => {
+    nock(ext.origin)
+      .get(ext.pathname + '/snapshot')
+      .query(q => q.entity === 'mapa-guarnicoes' && !('since' in q))
+      .reply(200, { entity: 'mapa-guarnicoes', items: [], skip: 0, limit: 500, has_more: false });
+    const r = await sisbomClient.getSnapshot({ entity: 'mapa-guarnicoes' });
+    expect(r.entity).toBe('mapa-guarnicoes');
+  });
+
   it('getMapaForca repassa lotacao/date/período e retorna { militares, resumo }', async () => {
     nock(ext.origin)
       .get(ext.pathname + '/mapa-forca')

@@ -45,9 +45,9 @@ class SisbomClient {
     return res.data;
   }
 
-  async getSnapshot(params: { entity: string; skip?: number; limit?: number }): Promise<SnapshotResponse> {
+  async getSnapshot(params: { entity: string; since?: string; skip?: number; limit?: number }): Promise<SnapshotResponse> {
     const res = await this.external.get<SnapshotResponse>('/snapshot', {
-      params: { entity: params.entity, skip: params.skip ?? 0, limit: params.limit ?? 500 },
+      params: { entity: params.entity, since: params.since, skip: params.skip ?? 0, limit: params.limit ?? 500 },
     });
     return res.data;
   }
