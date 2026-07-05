@@ -11,9 +11,11 @@ export function patentesMaisRecentes(docs: MapaGuarnicaoDoc[]): Map<string, numb
     const data = d.date_start ?? '';
     for (const m of d.guarnicao ?? []) {
       const mid = m._militar ?? m._id;
-      if (!mid || m._patente == null) continue;
+      // _patente vem ora número, ora string ("16") no SISBOM — coage e ignora o inválido.
+      const pat = m._patente == null ? NaN : Number(m._patente);
+      if (!mid || !Number.isInteger(pat)) continue;
       const atual = melhor.get(mid);
-      if (!atual || data > atual.data) melhor.set(mid, { patente: m._patente, data });
+      if (!atual || data > atual.data) melhor.set(mid, { patente: pat, data });
     }
   }
   const out = new Map<string, number>();

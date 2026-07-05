@@ -3,7 +3,7 @@ import type { MapaGuarnicaoDoc } from '../integrations/sisbom/types.js';
 import { layoutService } from './template.service.js';
 import { logger } from '../utils/logger.js';
 
-export interface VagaLayout { funcao: string; quantidade_sugerida: number }
+export interface VagaLayout { funcao: string; quantidade_sugerida: number; patentes_esperadas: number[] }
 export interface GuarnicaoLayout {
   sigla: string; atividade: string;
   turno_padrao_inicio: string; turno_padrao_fim: string;
@@ -29,10 +29,21 @@ function moda<T>(itens: T[]): T | undefined {
 // daquela função por serviço. Puro e determinístico.
 export function agregarLayout(docs: MapaGuarnicaoDoc[]): { guarnicoes: GuarnicaoLayout[] } {
   const porAtividade = new Map<string, MapaGuarnicaoDoc[]>();
+  // patentes observadas por função (lotação-wide) → viram patentes_esperadas do layout,
+  // que o syncLayoutPatentes persiste como FuncaoPatente(template_id). Aviso soft.
+  const patentesPorFuncao = new Map<string, Set<number>>();
   for (const d of docs) {
     const at = (d.atividade ?? '').trim() || '-';
     if (!porAtividade.has(at)) porAtividade.set(at, []);
     porAtividade.get(at)!.push(d);
+    for (const m of d.guarnicao ?? []) {
+      // _patente vem ora número, ora string ("16") no SISBOM — coage e ignora o inválido.
+      const pat = m._patente == null ? NaN : Number(m._patente);
+      if (!Number.isInteger(pat)) continue;
+      const f = normFuncao(m.str_funcao);
+      if (!patentesPorFuncao.has(f)) patentesPorFuncao.set(f, new Set());
+      patentesPorFuncao.get(f)!.add(pat);
+    }
   }
   const atividades = [...porAtividade.keys()].sort();
   const guarnicoes: GuarnicaoLayout[] = atividades.map((at, ordem) => {
@@ -57,6 +68,7 @@ export function agregarLayout(docs: MapaGuarnicaoDoc[]): { guarnicoes: Guarnicao
       .map(([funcao, contagens]) => ({
         funcao,
         quantidade_sugerida: Math.min(50, Math.max(1, moda(contagens) ?? 1)),
+        patentes_esperadas: [...(patentesPorFuncao.get(funcao) ?? [])].sort((a, b) => a - b).slice(0, 72),
       }));
     return {
       sigla: at.slice(0, 20),
@@ -64,7 +76,7 @@ export function agregarLayout(docs: MapaGuarnicaoDoc[]): { guarnicoes: Guarnicao
       turno_padrao_inicio: moda(inicios) ?? '08:00',
       turno_padrao_fim: moda(fins) ?? '08:00',
       ordem,
-      vagas_sugeridas: vagas_sugeridas.length ? vagas_sugeridas : [{ funcao: 'GUARNIÇÃO', quantidade_sugerida: 1 }],
+      vagas_sugeridas: vagas_sugeridas.length ? vagas_sugeridas : [{ funcao: 'GUARNIÇÃO', quantidade_sugerida: 1, patentes_esperadas: [] }],
     };
   });
   return { guarnicoes };

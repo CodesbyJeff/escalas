@@ -47,4 +47,18 @@ describe('agregarLayout', () => {
     expect(out.guarnicoes[0]!.turno_padrao_inicio).toBe('08:00');
     expect(out.guarnicoes[0]!.turno_padrao_fim).toBe('08:00');
   });
+
+  it('patentes_esperadas = união distinta ordenada das patentes observadas por função (lotação-wide)', () => {
+    const docPat = (atividade: string, membros: { funcao: string; pat: number | null }[]): MapaGuarnicaoDoc => ({
+      _lotacao: 'L1', atividade, time_start: '08:00', time_end: '08:00',
+      guarnicao: membros.map((m) => ({ _militar: 'x', str_funcao: m.funcao, _patente: m.pat })),
+    });
+    const out = agregarLayout([
+      docPat('INCENDIO', [{ funcao: 'CMT_GU', pat: 12 }, { funcao: 'OP', pat: 17 }]),
+      docPat('RESGATE', [{ funcao: 'CMT_GU', pat: 13 }, { funcao: 'OP', pat: null }]), // union lotação-wide p/ CMT_GU; null ignorado
+    ]);
+    const inc = out.guarnicoes.find((g) => g.atividade === 'INCENDIO')!;
+    expect(inc.vagas_sugeridas.find((v) => v.funcao === 'CMT_GU')!.patentes_esperadas).toEqual([12, 13]);
+    expect(inc.vagas_sugeridas.find((v) => v.funcao === 'OP')!.patentes_esperadas).toEqual([17]);
+  });
 });
