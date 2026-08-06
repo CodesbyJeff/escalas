@@ -34,8 +34,12 @@ async function montarPlano(
   descanso_horas: number,
   prisma: PrismaClient,
 ): Promise<PlanoInput> {
-  // pool de militares da lotação
-  const usuarios = await adminService.listarUsuarios({ lotacao_id: escala.lotacao_id }, prisma);
+  // pool de militares da lotação — sem teto: quem ficar de fora não é considerado na
+  // equidade e nunca é escalado, então o pool tem que ser o efetivo inteiro da lotação.
+  const usuarios = await adminService.listarUsuarios(
+    { lotacao_id: escala.lotacao_id, limite: null },
+    prisma,
+  );
   const militares = usuarios.map((u) => ({ id: u.id, nome: u.nome, patente_id: u.patente_id }));
 
   // contagemInicial (equidade): vagas preenchidas nesta escala + em escalas anteriores

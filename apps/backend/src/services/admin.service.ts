@@ -41,7 +41,13 @@ export const adminService = {
     await prisma.userRole.delete({ where: { id: roleId } });
   },
 
-  async listarUsuarios(filtro: { q?: string; lotacao_id?: number }, prisma: PrismaClient) {
+  // `limite` = teto de linhas; padrão 100 (listagens de tela). Passe `null` quando o
+  // chamador precisar do conjunto COMPLETO — o motor de preenchimento monta o pool de
+  // candidatos daqui, e um teto silencioso deixaria militares de fora da equidade.
+  async listarUsuarios(
+    filtro: { q?: string; lotacao_id?: number; limite?: number | null },
+    prisma: PrismaClient,
+  ) {
     return prisma.user.findMany({
       where: {
         ativo: true,
@@ -57,7 +63,7 @@ export const adminService = {
         }),
       },
       include: { roles: true, patente: true },
-      take: 100,
+      ...(filtro.limite === null ? {} : { take: filtro.limite ?? 100 }),
       orderBy: { nome: 'asc' },
     });
   },

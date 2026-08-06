@@ -62,4 +62,13 @@ describe('planejarPreenchimento', () => {
     const out = planejarPreenchimento(base({ vagas: [vaga(10, '2026-08-01')] }));
     expect(out[0]!.militar_id).toBe(1);
   });
+
+  it('intervalo de militar fora do pool é ignorado, não vira candidato nem trava a vaga', () => {
+    const out = planejarPreenchimento(base({
+      militares: [{ id: 1, nome: 'A', patente_id: 17 }],
+      intervalosExistentes: [{ militar_id: 99, data: '2026-08-01', ...T24 }], // 99 não está no pool
+      vagas: [vaga(10, '2026-08-01')],
+    }));
+    expect(out[0]!.militar_id).toBe(1);
+  });
 });

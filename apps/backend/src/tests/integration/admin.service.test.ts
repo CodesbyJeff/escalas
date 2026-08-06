@@ -53,3 +53,31 @@ describe('admin.service.atribuirRole', () => {
     expect(count).toBe(1);
   });
 });
+
+describe('admin.service.listarUsuarios', () => {
+  // 105 militares numa lotação: acima do teto padrão de 100.
+  async function seedLotacaoGrande(): Promise<number> {
+    const lotacao = await testPrisma.lotacao.create({
+      data: { id: 998, sigla: 'BIG', nome: 'Lotação Grande', nivel: 1, operacional: true },
+    });
+    for (let n = 0; n < 105; n++) {
+      const u = await testPrisma.user.create({
+        data: { cpf: `7000000${String(n).padStart(4, '0')}`, nome: `Militar ${String(n).padStart(3, '0')}`, last_sync_at: new Date() },
+      });
+      await testPrisma.userLotacao.create({ data: { user_id: u.id, lotacao_id: lotacao.id, nivel: 3 } });
+    }
+    return lotacao.id;
+  }
+
+  it('aplica o teto padrão de 100 nas listagens de tela', async () => {
+    const lotacao_id = await seedLotacaoGrande();
+    const list = await adminService.listarUsuarios({ lotacao_id }, testPrisma);
+    expect(list).toHaveLength(100);
+  });
+
+  it('limite null devolve o efetivo inteiro (pool do motor de preenchimento)', async () => {
+    const lotacao_id = await seedLotacaoGrande();
+    const list = await adminService.listarUsuarios({ lotacao_id, limite: null }, testPrisma);
+    expect(list).toHaveLength(105);
+  });
+});

@@ -35,8 +35,11 @@ export function planejarPreenchimento(input: PlanoInput): ResultadoVaga[] {
   const porMilitar = new Map<number, [number, number][]>();
   for (const m of input.militares) porMilitar.set(m.id, []);
   for (const ie of input.intervalosExistentes) {
-    if (!porMilitar.has(ie.militar_id)) porMilitar.set(ie.militar_id, []);
-    porMilitar.get(ie.militar_id)!.push(intervaloAbs(ie.data, ie.turno_inicio, ie.turno_fim));
+    // militar fora do pool não é candidato a nada — guardar os intervalos dele seria
+    // memória que ninguém lê (só se consulta `porMilitar` para quem está em `militares`).
+    const ints = porMilitar.get(ie.militar_id);
+    if (!ints) continue;
+    ints.push(intervaloAbs(ie.data, ie.turno_inicio, ie.turno_fim));
   }
   const nomeDe = new Map(input.militares.map((m) => [m.id, m.nome] as const));
   const patenteDe = new Map(input.militares.map((m) => [m.id, m.patente_id] as const));
