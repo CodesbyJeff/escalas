@@ -25,7 +25,19 @@ async function refreshToken(): Promise<boolean> {
   return true;
 }
 
+// Rotas que estabelecem a sessão. Um 401 aqui é credencial recusada, não sessão morta:
+// não faz sentido tentar renovar (não há o que renovar) nem derrubar quem já estava logado.
+const ROTAS_DE_AUTENTICACAO = ['/auth/login', '/auth/refresh'];
+
+// Nem toda resposta traz envelope: o rate limiter, por exemplo, responde 429 com corpo
+// vazio. Sem isto o usuário lê "Erro de comunicação" e não faz ideia de que se bloqueou.
+function mensagemSemCorpo(status: number): string {
+  if (status === 429) return 'Muitas tentativas. Aguarde um minuto e tente de novo.';
+  return 'Erro de comunicação.';
+}
+
 async function request<T>(method: string, path: string, body?: unknown, _retried = false): Promise<T> {
+  const ehAutenticacao = ROTAS_DE_AUTENTICACAO.some((rota) => path.startsWith(rota));
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -36,7 +48,7 @@ async function request<T>(method: string, path: string, body?: unknown, _retried
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 
-  if (res.status === 401 && !_retried) {
+  if (res.status === 401 && !_retried && !ehAutenticacao) {
     if (await refreshToken()) return request<T>(method, path, body, true);
     clearTokens();
     throw new ApiError(401, 'Sessão expirada.');
@@ -44,7 +56,7 @@ async function request<T>(method: string, path: string, body?: unknown, _retried
 
   const json = (await res.json().catch(() => null)) as ApiResponse<T> | null;
   if (!res.ok || !json || !json.success) {
-    throw new ApiError(res.status, json?.message ?? 'Erro de comunicação.');
+    throw new ApiError(res.status, json?.message ?? mensagemSemCorpo(res.status));
   }
   return json.data;
 }
