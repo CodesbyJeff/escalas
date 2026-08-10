@@ -10,13 +10,16 @@ function base(over: Partial<PlanoInput> = {}): PlanoInput {
       { id: 2, nome: 'B', patente_id: 12 },
     ],
     contagemInicial: new Map(),
+    contagemLocalInicial: new Map(),
+    politicaLocalidade: 'indiferente',
     intervalosExistentes: [],
     vagas: [],
     esperadasPorFuncao: new Map(),
     ...over,
   };
 }
-const vaga = (vaga_id: number, data: string, funcao = 'OP') => ({ vaga_id, data, guarnicao_sigla: 'INC', guarnicao_ordem: 0, funcao, ...T24 });
+const vaga = (vaga_id: number, data: string, funcao = 'OP', atividade = 'INCENDIO') =>
+  ({ vaga_id, data, guarnicao_sigla: 'INC', guarnicao_atividade: atividade, guarnicao_ordem: 0, funcao, ...T24 });
 
 describe('planejarPreenchimento', () => {
   it('equidade: quem tem menos serviços é escolhido primeiro', () => {
@@ -70,5 +73,116 @@ describe('planejarPreenchimento', () => {
       vagas: [vaga(10, '2026-08-01')],
     }));
     expect(out[0]!.militar_id).toBe(1);
+  });
+
+  it('indiferente: a localidade não influencia e o motivo é o do 2c (regressão)', () => {
+    const out = planejarPreenchimento(base({
+      contagemInicial: new Map([[1, 5]]),
+      contagemLocalInicial: new Map([[2, new Map([['INCENDIO', 99]])]]),
+      vagas: [vaga(10, '2026-08-01')],
+    }));
+    expect(out[0]!.militar_id).toBe(2);
+    expect(out[0]!.motivo).toBe('menos serviços (0) · descansado · patente ok');
+  });
+
+  it('rodizia: com o mesmo total, vence quem tirou menos serviços naquela localidade', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'rodizia',
+      contagemInicial: new Map([[1, 3], [2, 3]]),
+      contagemLocalInicial: new Map([
+        [1, new Map([['PONTA NEGRA', 3]])],
+        [2, new Map([['MIAMI', 3]])],
+      ]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'Ponta Negra')],
+    }));
+    expect(out[0]!.militar_id).toBe(2);
+    expect(out[0]!.motivo).toContain('menos serviços em Ponta Negra (0)');
+  });
+
+  it('rodizia: com a mesma contagem local, o total desempata', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'rodizia',
+      contagemInicial: new Map([[1, 9], [2, 2]]),
+      contagemLocalInicial: new Map([
+        [1, new Map([['PONTA NEGRA', 1]])],
+        [2, new Map([['PONTA NEGRA', 1]])],
+      ]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'Ponta Negra')],
+    }));
+    expect(out[0]!.militar_id).toBe(2);
+  });
+
+  it('rodizia: espalha as localidades dentro da mesma rodada', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'rodizia',
+      descanso_horas: 0,
+      contagemInicial: new Map([[2, 5]]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'Ponta Negra'), vaga(11, '2026-08-05', 'OP', 'Ponta Negra')],
+    }));
+    // 1ª vaga: ninguém serviu em Ponta Negra → decide o total → militar 1.
+    // 2ª vaga: militar 1 já tem 1 em Ponta Negra → vai o militar 2, apesar do total maior.
+    expect(out[0]!.militar_id).toBe(1);
+    expect(out[1]!.militar_id).toBe(2);
+  });
+
+  it('fixa: quem já serviu na guarnição vence quem nunca serviu, mesmo com mais serviços no total', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'fixa',
+      contagemInicial: new Map([[1, 12]]),
+      contagemLocalInicial: new Map([[1, new Map([['INCENDIO', 12]])]]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'INCENDIO')],
+    }));
+    expect(out[0]!.militar_id).toBe(1);
+    expect(out[0]!.motivo).toContain('é do INCENDIO');
+  });
+
+  it('fixa: entre dois que pertencem à guarnição, vence o de menor total (o sinal é binário, não placar)', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'fixa',
+      contagemInicial: new Map([[1, 20], [2, 4]]),
+      contagemLocalInicial: new Map([
+        [1, new Map([['INCENDIO', 20]])],
+        [2, new Map([['INCENDIO', 4]])],
+      ]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'INCENDIO')],
+    }));
+    expect(out[0]!.militar_id).toBe(2);
+  });
+
+  it('fixa: sem ninguém com histórico na guarnição, o ranqueio cai no total', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'fixa',
+      contagemInicial: new Map([[1, 7]]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'INCENDIO')],
+    }));
+    expect(out[0]!.militar_id).toBe(2);
+    expect(out[0]!.motivo).toContain('sem histórico em INCENDIO');
+  });
+
+  it('conflito de turno continua hard sob fixa', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'fixa',
+      contagemLocalInicial: new Map([[1, new Map([['INCENDIO', 10]])]]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'INCENDIO'), vaga(11, '2026-08-01', 'OP', 'INCENDIO')],
+    }));
+    expect(new Set(out.map((r) => r.militar_id)).size).toBe(2);
+  });
+
+  it('localidade é normalizada (acento, caixa e espaços não criam contagens separadas)', () => {
+    const out = planejarPreenchimento(base({
+      politicaLocalidade: 'rodizia',
+      contagemInicial: new Map([[2, 5]]),
+      contagemLocalInicial: new Map([[1, new Map([['PRAIA DO MEIO', 2]])]]),
+      vagas: [vaga(10, '2026-08-01', 'OP', 'Praia  do  Meio')],
+    }));
+    expect(out[0]!.militar_id).toBe(2); // militar 1 já tem 2 na mesma praia, apesar do total menor
+  });
+
+  it('determinismo: a mesma entrada produz a mesma saída', () => {
+    const entrada = () => base({
+      politicaLocalidade: 'rodizia',
+      vagas: [vaga(10, '2026-08-01', 'OP', 'Ponta Negra'), vaga(11, '2026-08-02', 'OP', 'Miami')],
+    });
+    expect(planejarPreenchimento(entrada())).toEqual(planejarPreenchimento(entrada()));
   });
 });

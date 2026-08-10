@@ -94,6 +94,7 @@ async function montarPlano(
     vaga_id: v.id,
     data: v.guarnicao.dia.data.toISOString().slice(0, 10),
     guarnicao_sigla: v.guarnicao.sigla,
+    guarnicao_atividade: v.guarnicao.atividade,
     guarnicao_ordem: v.guarnicao.ordem,
     funcao: v.funcao,
     turno_inicio: v.turno_inicio,
@@ -113,7 +114,16 @@ async function montarPlano(
     esperadasPorFuncao.set(v.funcao, memo.get(funcao_norm)!);
   }
 
-  return { descanso_horas, militares, contagemInicial, intervalosExistentes, vagas, esperadasPorFuncao };
+  return {
+    descanso_horas,
+    militares,
+    contagemInicial,
+    contagemLocalInicial: new Map(),
+    politicaLocalidade: 'indiferente',
+    intervalosExistentes,
+    vagas,
+    esperadasPorFuncao,
+  };
 }
 
 export const preenchimentoService = {
