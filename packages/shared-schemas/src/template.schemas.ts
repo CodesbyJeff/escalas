@@ -18,8 +18,11 @@ export const guarnicaoTemplateInputSchema = z.object({
   vagas_sugeridas: z.array(vagaSugeridaInputSchema).min(1, 'Pelo menos uma vaga sugerida'),
 });
 
+export const politicaLocalidadeSchema = z.enum(['indiferente', 'rodizia', 'fixa']);
+
 export const criarLayoutSchema = z.object({
   nome: z.string().trim().min(1, 'Nome obrigatório').max(60),
+  politica_localidade: politicaLocalidadeSchema.default('indiferente'),
   guarnicoes: z.array(guarnicaoTemplateInputSchema).min(1, 'Pelo menos uma guarnição'),
 });
 export const atualizarLayoutSchema = criarLayoutSchema;

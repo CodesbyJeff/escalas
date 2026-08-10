@@ -17,7 +17,7 @@ describe('layoutService — camada patentes', () => {
 
   it('criar sincroniza FuncaoPatente(template_id) para funções com patentes', async () => {
     const { lot, admin } = await ctx();
-    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', guarnicoes: [guarn('Comandante', [12, 13])] }, testPrisma);
+    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', politica_localidade: 'indiferente', guarnicoes: [guarn('Comandante', [12, 13])] }, testPrisma);
     const regras = await testPrisma.funcaoPatente.findMany({ where: { template_id: tpl.id } });
     expect(regras).toHaveLength(1);
     expect(regras[0]!).toMatchObject({ funcao_norm: 'COMANDANTE', patente_ids: [12, 13] });
@@ -25,14 +25,14 @@ describe('layoutService — camada patentes', () => {
 
   it('função sem patentes não cria regra', async () => {
     const { lot, admin } = await ctx();
-    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', guarnicoes: [guarn('Motorista')] }, testPrisma);
+    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', politica_localidade: 'indiferente', guarnicoes: [guarn('Motorista')] }, testPrisma);
     expect(await testPrisma.funcaoPatente.count({ where: { template_id: tpl.id } })).toBe(0);
   });
 
   it('atualizar faz replace-all das regras do layout', async () => {
     const { lot, admin } = await ctx();
-    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', guarnicoes: [guarn('Comandante', [12])] }, testPrisma);
-    await layoutService.atualizar(tpl.id, admin.id, { nome: 'P', guarnicoes: [guarn('Comandante', [4])] }, testPrisma);
+    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', politica_localidade: 'indiferente', guarnicoes: [guarn('Comandante', [12])] }, testPrisma);
+    await layoutService.atualizar(tpl.id, admin.id, { nome: 'P', politica_localidade: 'indiferente', guarnicoes: [guarn('Comandante', [4])] }, testPrisma);
     const regras = await testPrisma.funcaoPatente.findMany({ where: { template_id: tpl.id } });
     expect(regras).toHaveLength(1);
     expect(regras[0]!.patente_ids).toEqual([4]);
@@ -40,7 +40,7 @@ describe('layoutService — camada patentes', () => {
 
   it('obter devolve patentes_esperadas por vaga (e [] quando sem regra)', async () => {
     const { lot, admin } = await ctx();
-    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', guarnicoes: [guarn('Comandante', [12])] }, testPrisma);
+    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', politica_localidade: 'indiferente', guarnicoes: [guarn('Comandante', [12])] }, testPrisma);
     const obtido = await layoutService.obter(tpl.id, testPrisma);
     const vaga = obtido!.guarnicoes[0]!.vagas_sugeridas[0]! as unknown as { patentes_esperadas: number[] };
     expect(vaga.patentes_esperadas).toEqual([12]);
@@ -48,7 +48,7 @@ describe('layoutService — camada patentes', () => {
 
   it('obter devolve [] para vaga de função sem regra', async () => {
     const { lot, admin } = await ctx();
-    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', guarnicoes: [guarn('Motorista')] }, testPrisma);
+    const tpl = await layoutService.criar(lot.id, admin.id, { nome: 'P', politica_localidade: 'indiferente', guarnicoes: [guarn('Motorista')] }, testPrisma);
     const obtido = await layoutService.obter(tpl.id, testPrisma);
     const vaga = obtido!.guarnicoes[0]!.vagas_sugeridas[0]! as unknown as { patentes_esperadas: number[] };
     expect(vaga.patentes_esperadas).toEqual([]);

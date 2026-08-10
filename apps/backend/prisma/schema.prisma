@@ -47,23 +47,23 @@ model User {
 }
 
 model Lotacao {
-  id             Int               @id @default(autoincrement())
-  sisbom_id      String?           @unique
-  sisbom_ref     String?           @unique
-  sigla          String
-  sigla_extenso  String?
-  nome           String
-  lotacao_pai_id Int?
-  nivel          Int
-  operacional    Boolean           @default(false)
-  externo        Boolean           @default(false)
-  last_sync_at   DateTime?
-  pai            Lotacao?          @relation("LotacaoHierarquia", fields: [lotacao_pai_id], references: [id])
-  filhas         Lotacao[]         @relation("LotacaoHierarquia")
-  user_lotacoes  UserLotacao[]
-  user_roles     UserRole[]
-  templates      TemplateLotacao[]
-  escalas        Escala[]
+  id              Int               @id @default(autoincrement())
+  sisbom_id       String?           @unique
+  sisbom_ref      String?           @unique
+  sigla           String
+  sigla_extenso   String?
+  nome            String
+  lotacao_pai_id  Int?
+  nivel           Int
+  operacional     Boolean           @default(false)
+  externo         Boolean           @default(false)
+  last_sync_at    DateTime?
+  pai             Lotacao?          @relation("LotacaoHierarquia", fields: [lotacao_pai_id], references: [id])
+  filhas          Lotacao[]         @relation("LotacaoHierarquia")
+  user_lotacoes   UserLotacao[]
+  user_roles      UserRole[]
+  templates       TemplateLotacao[]
+  escalas         Escala[]
   funcao_patentes FuncaoPatente[]
 }
 
@@ -96,17 +96,24 @@ model SyncCursor {
   last_mirror_ref_at DateTime
 }
 
-model TemplateLotacao {
-  id            Int      @id @default(autoincrement())
-  lotacao_id    Int
-  nome          String
-  criado_por_id Int
-  updated_at    DateTime @updatedAt
+enum PoliticaLocalidade {
+  indiferente
+  rodizia
+  fixa
+}
 
-  lotacao    Lotacao             @relation(fields: [lotacao_id], references: [id])
-  criado_por User                @relation(fields: [criado_por_id], references: [id])
-  guarnicoes TemplateGuarnicao[]
-  escalas    Escala[]
+model TemplateLotacao {
+  id                  Int                @id @default(autoincrement())
+  lotacao_id          Int
+  nome                String
+  politica_localidade PoliticaLocalidade @default(indiferente)
+  criado_por_id       Int
+  updated_at          DateTime           @updatedAt
+
+  lotacao         Lotacao             @relation(fields: [lotacao_id], references: [id])
+  criado_por      User                @relation(fields: [criado_por_id], references: [id])
+  guarnicoes      TemplateGuarnicao[]
+  escalas         Escala[]
   funcao_patentes FuncaoPatente[]
 
   @@unique([lotacao_id, nome])
@@ -160,9 +167,9 @@ model Escala {
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
 
-  lotacao    Lotacao              @relation(fields: [lotacao_id], references: [id])
-  criado_por User                 @relation("EscalaCriador", fields: [criado_por_id], references: [id])
-  template   TemplateLotacao?     @relation(fields: [template_id], references: [id], onDelete: SetNull)
+  lotacao    Lotacao           @relation(fields: [lotacao_id], references: [id])
+  criado_por User              @relation("EscalaCriador", fields: [criado_por_id], references: [id])
+  template   TemplateLotacao?  @relation(fields: [template_id], references: [id], onDelete: SetNull)
   dias       EscalaDia[]
   versoes    EscalaVersao[]
   validacoes ValidacaoEscala[]

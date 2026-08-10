@@ -16,10 +16,13 @@ export interface TemplateGuarnicaoDTO {
   vagas_sugeridas: TemplateVagaSugeridaDTO[];
 }
 
+export type PoliticaLocalidade = 'indiferente' | 'rodizia' | 'fixa';
+
 export interface TemplateLotacaoDTO {
   id: number;
   lotacao_id: number;
   nome: string;
+  politica_localidade: PoliticaLocalidade;
   criado_por_id: number;
   updated_at: string;
   guarnicoes: TemplateGuarnicaoDTO[];

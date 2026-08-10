@@ -10,7 +10,7 @@ async function lotacaoEUser() {
   const u = await testPrisma.user.create({ data: { cpf: '90000000001', nome: 'Esc', last_sync_at: new Date() } });
   return { lot, u };
 }
-const layoutInput = (nome: string) => ({ nome, guarnicoes: [
+const layoutInput = (nome: string) => ({ nome, politica_localidade: 'indiferente' as const, guarnicoes: [
   { sigla: 'ABT', atividade: 'Incêndio', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0,
     vagas_sugeridas: [{ funcao: 'Comandante', quantidade_sugerida: 1 }, { funcao: 'Motorista', quantidade_sugerida: 2 }] },
 ] });
@@ -36,7 +36,7 @@ describe('layoutService', () => {
     const lot = await testPrisma.lotacao.create({ data: { id: 700, sigla: 'L700', nome: 'L', nivel: 3, operacional: true } });
     const admin = await testPrisma.user.create({ data: { cpf: 'ADM700', nome: 'Adm', last_sync_at: new Date() } });
     const criado = await layoutService.criar(lot.id, admin.id, {
-      nome: 'Prontidão', guarnicoes: [{
+      nome: 'Prontidão', politica_localidade: 'indiferente', guarnicoes: [{
         sigla: 'INC', atividade: 'INCENDIO', turno_padrao_inicio: '08:00', turno_padrao_fim: '08:00',
         ordem: 0, ciclo_dias: 4, vagas_sugeridas: [{ funcao: 'CMT_GU', quantidade_sugerida: 1 }],
       }],
@@ -48,7 +48,7 @@ describe('layoutService', () => {
   it('atualizar substitui guarnições; excluir remove', async () => {
     const { lot, u } = await lotacaoEUser();
     const l = await layoutService.criar(lot.id, u.id, layoutInput('X'), testPrisma);
-    const upd = await layoutService.atualizar(l.id, u.id, { nome: 'X', guarnicoes: [
+    const upd = await layoutService.atualizar(l.id, u.id, { nome: 'X', politica_localidade: 'indiferente', guarnicoes: [
       { sigla: 'UR', atividade: 'APH', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem: 0, vagas_sugeridas: [{ funcao: 'Socorrista', quantidade_sugerida: 1 }] },
     ] }, testPrisma);
     expect(upd.guarnicoes).toHaveLength(1);

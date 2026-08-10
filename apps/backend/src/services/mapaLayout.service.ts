@@ -92,7 +92,7 @@ export const mapaLayoutService = {
     if (!guarnicoes.length) { logger.info('mapa_layout_skip_sem_docs', { lotacao_id }); return null; }
     const existentes = await layoutService.listarPorLotacao(lotacao_id, prisma);
     const atual = existentes.find((t) => t.nome === NOME_LAYOUT);
-    const input = { nome: NOME_LAYOUT, guarnicoes };
+    const input = { nome: NOME_LAYOUT, politica_localidade: 'indiferente' as const, guarnicoes };
     if (atual) return layoutService.atualizar(atual.id, user_id, input, prisma);
     return layoutService.criar(lotacao_id, user_id, input, prisma);
   },

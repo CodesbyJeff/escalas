@@ -63,7 +63,7 @@ export const layoutService = {
     try {
       const tpl = await prisma.$transaction(async (tx) => {
         const criado = await tx.templateLotacao.create({
-          data: { lotacao_id, nome: input.nome, criado_por_id: user_id, guarnicoes: { create: input.guarnicoes.map(mapGuarnicaoCreate) } },
+          data: { lotacao_id, nome: input.nome, politica_localidade: input.politica_localidade, criado_por_id: user_id, guarnicoes: { create: input.guarnicoes.map(mapGuarnicaoCreate) } },
           include: includeAninhado,
         });
         await syncLayoutPatentes(tx, criado.id, input.guarnicoes);
@@ -84,7 +84,7 @@ export const layoutService = {
         await tx.templateGuarnicao.deleteMany({ where: { template_lotacao_id: id } });
         await tx.templateLotacao.update({
           where: { id },
-          data: { nome: input.nome, criado_por_id: user_id, guarnicoes: { create: input.guarnicoes.map(mapGuarnicaoCreate) } },
+          data: { nome: input.nome, politica_localidade: input.politica_localidade, criado_por_id: user_id, guarnicoes: { create: input.guarnicoes.map(mapGuarnicaoCreate) } },
         });
         await syncLayoutPatentes(tx, id, input.guarnicoes);
         return anexarPatentes(await tx.templateLotacao.findUniqueOrThrow({ where: { id }, include: includeAninhado }), tx as unknown as PrismaClient);

@@ -5,7 +5,7 @@ const novaVaga = () => ({ funcao: '', quantidade_sugerida: 1, patentes_esperadas
 const novaGuarnicao = (ordem: number) => ({ sigla: '', atividade: '', turno_padrao_inicio: '07:00', turno_padrao_fim: '19:00', ordem, ciclo_dias: undefined as number | undefined, vagas_sugeridas: [novaVaga()] });
 
 export function useLayoutDraft(inicial?: CriarLayoutInput) {
-  const form = useForm<CriarLayoutInput>({ initialValues: inicial ?? { nome: '', guarnicoes: [novaGuarnicao(0)] } });
+  const form = useForm<CriarLayoutInput>({ initialValues: inicial ?? { nome: '', politica_localidade: 'indiferente', guarnicoes: [novaGuarnicao(0)] } });
   return {
     ...form,
     setNome: (n: string) => form.setFieldValue('nome', n),
