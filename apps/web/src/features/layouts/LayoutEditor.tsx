@@ -19,6 +19,7 @@ export function LayoutEditor({ draft, onSalvar, salvando }: {
           <Button color="cbmrn" onClick={onSalvar} loading={salvando}>Salvar Layout</Button></Group>
       </Group>
       <Stack gap={4}>
+        <Text size="sm" fw={500}>Política de localidade</Text>
         <SegmentedControl
           w={420}
           data={[

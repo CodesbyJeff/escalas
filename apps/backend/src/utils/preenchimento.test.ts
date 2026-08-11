@@ -139,14 +139,20 @@ describe('planejarPreenchimento', () => {
   it('fixa: entre dois que pertencem à guarnição, vence o de menor total (o sinal é binário, não placar)', () => {
     const out = planejarPreenchimento(base({
       politicaLocalidade: 'fixa',
-      contagemInicial: new Map([[1, 20], [2, 4]]),
+      militares: [
+        { id: 1, nome: 'A', patente_id: 17 },
+        { id: 2, nome: 'B', patente_id: 12 },
+        { id: 3, nome: 'C', patente_id: 12 },
+      ],
+      contagemInicial: new Map([[1, 1], [2, 8], [3, 9]]),
       contagemLocalInicial: new Map([
-        [1, new Map([['INCENDIO', 20]])],
-        [2, new Map([['INCENDIO', 4]])],
+        [1, new Map([['INCENDIO', 5]])],
+        [2, new Map([['INCENDIO', 1]])],
+        [3, new Map([['INCENDIO', 9]])],
       ]),
       vagas: [vaga(10, '2026-08-01', 'OP', 'INCENDIO')],
     }));
-    expect(out[0]!.militar_id).toBe(2);
+    expect(out[0]!.militar_id).toBe(1);
   });
 
   it('fixa: sem ninguém com histórico na guarnição, o ranqueio cai no total', () => {

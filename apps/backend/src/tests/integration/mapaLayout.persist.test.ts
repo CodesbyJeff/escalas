@@ -32,4 +32,14 @@ describe('mapaLayoutService.gerarParaLotacao', () => {
     await mapaLayoutService.gerarParaLotacao(lot.id, admin.id, docs, testPrisma);
     expect(await testPrisma.templateLotacao.count({ where: { lotacao_id: lot.id, nome: NOME } })).toBe(1);
   });
+
+  it('preserva a política de localidade marcada pelo escalante ao regenerar (não reseta para indiferente)', async () => {
+    const { lot, admin } = await ctx();
+    await mapaLayoutService.gerarParaLotacao(lot.id, admin.id, docs, testPrisma);
+    const tpl = await testPrisma.templateLotacao.findFirstOrThrow({ where: { lotacao_id: lot.id, nome: NOME } });
+    await testPrisma.templateLotacao.update({ where: { id: tpl.id }, data: { politica_localidade: 'rodizia' } });
+    await mapaLayoutService.gerarParaLotacao(lot.id, admin.id, docs, testPrisma);
+    const depois = await testPrisma.templateLotacao.findUniqueOrThrow({ where: { id: tpl.id } });
+    expect(depois.politica_localidade).toBe('rodizia');
+  });
 });

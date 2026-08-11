@@ -92,9 +92,15 @@ export const mapaLayoutService = {
     if (!guarnicoes.length) { logger.info('mapa_layout_skip_sem_docs', { lotacao_id }); return null; }
     const existentes = await layoutService.listarPorLotacao(lotacao_id, prisma);
     const atual = existentes.find((t) => t.nome === NOME_LAYOUT);
-    const input = { nome: NOME_LAYOUT, politica_localidade: 'indiferente' as const, guarnicoes };
-    if (atual) return layoutService.atualizar(atual.id, user_id, input, prisma);
-    return layoutService.criar(lotacao_id, user_id, input, prisma);
+    if (atual) {
+      // Preserva a política de localidade que o escalante marcou — a regeneração do
+      // mapa de força só substitui guarnições/vagas, nunca decide "rodizia"/"fixa" por conta própria.
+      const politica = (await prisma.templateLotacao.findUnique({
+        where: { id: atual.id }, select: { politica_localidade: true },
+      }))?.politica_localidade ?? 'indiferente';
+      return layoutService.atualizar(atual.id, user_id, { nome: NOME_LAYOUT, politica_localidade: politica, guarnicoes }, prisma);
+    }
+    return layoutService.criar(lotacao_id, user_id, { nome: NOME_LAYOUT, politica_localidade: 'indiferente' as const, guarnicoes }, prisma);
   },
 
   // Roda a geração para todas as lotações operacionais reais com efetivo.
