@@ -35,3 +35,21 @@ it('mostra o campo Patentes esperadas em cada vaga sugerida', () => {
   renderWithProviders(<Harness />);
   expect(screen.getByRole('textbox', { name: 'Patentes esperadas' })).toBeInTheDocument();
 });
+
+function HarnessComEspelho() {
+  const draft = useLayoutDraft();
+  return (
+    <>
+      <LayoutEditor draft={draft} onSalvar={() => {}} salvando={false} />
+      <span data-testid="politica">{draft.values.politica_localidade}</span>
+    </>
+  );
+}
+
+it('permite escolher a política de localidade e reflete no rascunho', () => {
+  mockPatentes();
+  renderWithProviders(<HarnessComEspelho />);
+  expect(screen.getByTestId('politica')).toHaveTextContent('indiferente');
+  fireEvent.click(screen.getByRole('radio', { name: 'Rodiziar' }));
+  expect(screen.getByTestId('politica')).toHaveTextContent('rodizia');
+});

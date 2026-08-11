@@ -1,4 +1,4 @@
-import { Button, Card, Group, NumberInput, Stack, TextInput, Title, ActionIcon, MultiSelect } from '@mantine/core';
+import { Button, Card, Group, NumberInput, SegmentedControl, Stack, Text, TextInput, Title, ActionIcon, MultiSelect } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { patentesApi } from '../../lib/api/patentes';
@@ -18,6 +18,24 @@ export function LayoutEditor({ draft, onSalvar, salvando }: {
         <Group><Button variant="default" onClick={() => draft.addGuarnicao()}>Adicionar Guarnição</Button>
           <Button color="cbmrn" onClick={onSalvar} loading={salvando}>Salvar Layout</Button></Group>
       </Group>
+      <Stack gap={4}>
+        <SegmentedControl
+          w={420}
+          data={[
+            { value: 'indiferente', label: 'Indiferente' },
+            { value: 'rodizia', label: 'Rodiziar' },
+            { value: 'fixa', label: 'Fixar' },
+          ]}
+          {...draft.getInputProps('politica_localidade')}
+        />
+        <Text size="xs" c="dimmed">
+          {draft.values.politica_localidade === 'rodizia'
+            ? 'O preenchimento automático gira o militar entre as guarnições — usar nas praias do GBSA.'
+            : draft.values.politica_localidade === 'fixa'
+              ? 'O militar permanece na guarnição dele (incêndio, resgate). Militar sem histórico precisa de uma primeira escalação manual.'
+              : 'A guarnição não influencia a escolha do preenchimento automático.'}
+        </Text>
+      </Stack>
       {draft.values.guarnicoes.map((g, gi) => (
         <Card key={gi} withBorder>
           <Group>
