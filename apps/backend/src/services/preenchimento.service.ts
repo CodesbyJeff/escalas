@@ -42,12 +42,21 @@ async function montarPlano(
   );
   const militares = usuarios.map((u) => ({ id: u.id, nome: u.nome, patente_id: u.patente_id }));
 
+  // política de localidade vem do layout da escala; escala sem layout ⇒ indiferente.
+  const template = escala.template_id == null
+    ? null
+    : await prisma.templateLotacao.findUnique({
+        where: { id: escala.template_id },
+        select: { politica_localidade: true },
+      });
+  const politicaLocalidade = template?.politica_localidade ?? 'indiferente';
+
   // contagemInicial (equidade): vagas preenchidas nesta escala + em escalas anteriores
   // (mesma lotação, status publicada/aprovada, mês/ano estritamente anterior).
   const [vagasNestaEscala, vagasAnteriores] = await Promise.all([
     prisma.vaga.findMany({
       where: { militar_id: { not: null }, guarnicao: { dia: { escala_id: escala.id } } },
-      select: { militar_id: true },
+      select: { militar_id: true, guarnicao: { select: { atividade: true } } },
     }),
     prisma.vaga.findMany({
       where: {
@@ -62,13 +71,18 @@ async function montarPlano(
           },
         },
       },
-      select: { militar_id: true },
+      select: { militar_id: true, guarnicao: { select: { atividade: true } } },
     }),
   ]);
   const contagemInicial = new Map<number, number>();
+  const contagemLocalInicial = new Map<number, Map<string, number>>();
   for (const v of [...vagasNestaEscala, ...vagasAnteriores]) {
     if (v.militar_id == null) continue;
     contagemInicial.set(v.militar_id, (contagemInicial.get(v.militar_id) ?? 0) + 1);
+    const key = normalizeFuncao(v.guarnicao.atividade);
+    const mapa = contagemLocalInicial.get(v.militar_id) ?? new Map<string, number>();
+    mapa.set(key, (mapa.get(key) ?? 0) + 1);
+    contagemLocalInicial.set(v.militar_id, mapa);
   }
 
   // intervalosExistentes: vagas já preenchidas nos dias do intervalo desta escala
@@ -114,16 +128,7 @@ async function montarPlano(
     esperadasPorFuncao.set(v.funcao, memo.get(funcao_norm)!);
   }
 
-  return {
-    descanso_horas,
-    militares,
-    contagemInicial,
-    contagemLocalInicial: new Map(),
-    politicaLocalidade: 'indiferente',
-    intervalosExistentes,
-    vagas,
-    esperadasPorFuncao,
-  };
+  return { descanso_horas, militares, contagemInicial, contagemLocalInicial, politicaLocalidade, intervalosExistentes, vagas, esperadasPorFuncao };
 }
 
 export const preenchimentoService = {

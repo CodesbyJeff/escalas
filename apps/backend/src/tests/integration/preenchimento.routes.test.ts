@@ -151,4 +151,43 @@ describe('POST /api/v1/escalas/:id/sugerir-preenchimento e /aplicar-preenchiment
 
     expect(r.status).toBe(422);
   });
+
+  it('fixa: lê a política do layout e prefere quem já serviu na guarnição', async () => {
+    const { token, tmpl, escalaId, militares } = await cenario(933);
+    await testPrisma.templateLotacao.update({
+      where: { id: tmpl.id }, data: { politica_localidade: 'fixa' },
+    });
+
+    // militar 3 já serviu 'incendio' no dia 01 → passa a pertencer à guarnição.
+    const vagas = await vagasDoIntervalo(escalaId);
+    const dia1 = vagas.find((v) => v.guarnicao.dia.data.toISOString().slice(0, 10) === '2026-04-01')!;
+    await testPrisma.vaga.update({ where: { id: dia1.id }, data: { militar_id: militares[2]!.id } });
+
+    const r = await request(buildApp())
+      .post(`/api/v1/escalas/${escalaId}/sugerir-preenchimento`)
+      .set('authorization', `Bearer ${token}`)
+      .send({ data_ini: '2026-04-01', data_fim: '2026-04-02', descanso_horas: 0 });
+
+    expect(r.status).toBe(200);
+    const dia2 = r.body.data.find((s: { data: string }) => s.data === '2026-04-02');
+    expect(dia2.militar_id).toBe(militares[2]!.id);
+    expect(dia2.motivo).toContain('é do incendio');
+  });
+
+  it('indiferente (default): o mesmo cenário escolhe pelo total, não pela guarnição', async () => {
+    const { token, escalaId, militares } = await cenario(934);
+
+    const vagas = await vagasDoIntervalo(escalaId);
+    const dia1 = vagas.find((v) => v.guarnicao.dia.data.toISOString().slice(0, 10) === '2026-04-01')!;
+    await testPrisma.vaga.update({ where: { id: dia1.id }, data: { militar_id: militares[2]!.id } });
+
+    const r = await request(buildApp())
+      .post(`/api/v1/escalas/${escalaId}/sugerir-preenchimento`)
+      .set('authorization', `Bearer ${token}`)
+      .send({ data_ini: '2026-04-01', data_fim: '2026-04-02', descanso_horas: 0 });
+
+    expect(r.status).toBe(200);
+    const dia2 = r.body.data.find((s: { data: string }) => s.data === '2026-04-02');
+    expect(dia2.militar_id).not.toBe(militares[2]!.id); // militar 3 tem 1 serviço; os outros têm 0
+  });
 });
