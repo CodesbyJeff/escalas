@@ -277,7 +277,10 @@ describe('theme', () => {
   });
 
   it('densifica o espaçamento abaixo do padrão Mantine (md era 16px)', () => {
-    expect(theme.spacing?.md).toBe('0.875rem'); // 14px
+    // `rem()` do Mantine 7 devolve `calc(0.875rem * var(--mantine-scale))`,
+    // não a string crua — verificado no pacote instalado (7.17.8).
+    // O que importa asserir é o 14px, não o formato do wrapper.
+    expect(theme.spacing?.md).toContain('0.875rem'); // 14px, não os 16px do padrão
   });
 });
 ```
