@@ -6,17 +6,17 @@ import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { RouterContextProvider, createRouter, createRootRoute, createMemoryHistory } from '@tanstack/react-router';
 import { theme } from '../theme';
 
-function createTestRouter() {
+function createTestRouter(initialPath: string) {
   const rootRoute = createRootRoute();
   return createRouter({
     routeTree: rootRoute,
-    history: createMemoryHistory({ initialEntries: ['/'] }),
+    history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 }
 
-export function renderWithProviders(ui: ReactNode) {
+export function renderWithProviders(ui: ReactNode, options?: { initialPath?: string }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const router = createTestRouter();
+  const router = createTestRouter(options?.initialPath ?? '/');
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <MantineProvider theme={theme} env="test">

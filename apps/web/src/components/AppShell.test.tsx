@@ -92,4 +92,13 @@ describe('AppShellNav — cromo', () => {
     );
     expect(screen.getAllByText('Escalas CBMRN').length).toBeGreaterThan(0);
   });
+
+  it('marca o item de rota ativa com aria-current="page" e deixa os demais sem o atributo', () => {
+    renderWithProviders(
+      <AppShellNav nome="A" papel="x" canExecutar={false} canValidar={false} canLayouts={false} onLogout={() => {}} />,
+      { initialPath: '/painel' },
+    );
+    expect(screen.getByRole('link', { name: 'Painel' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Listar' })).not.toHaveAttribute('aria-current');
+  });
 });

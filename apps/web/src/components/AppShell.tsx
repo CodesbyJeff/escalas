@@ -49,30 +49,32 @@ export function AppShellNav({ nome, papel, canExecutar, canValidar, canLayouts, 
 
       <AppShell.Navbar p="xs" className={classes.navbar}>
         <NavLink className={classes.link} component={Link} to="/painel" label="Painel"
-          active={ativo('/painel')} leftSection={<IconLayoutDashboard size={18} />} />
+          active={ativo('/painel')} aria-current={ativo('/painel') ? 'page' : undefined} leftSection={<IconLayoutDashboard size={18} />} />
         <NavLink label="Escala" leftSection={<IconCalendar size={18} />} defaultOpened>
-          <NavLink className={classes.link} component={Link} to="/escalas" label="Listar" active={ativo('/escalas')} />
-          <NavLink className={classes.link} component={Link} to="/escalas/nova" label="Nova Escala" active={ativo('/escalas/nova')} />
+          <NavLink className={classes.link} component={Link} to="/escalas" label="Listar"
+            active={ativo('/escalas')} aria-current={ativo('/escalas') ? 'page' : undefined} />
+          <NavLink className={classes.link} component={Link} to="/escalas/nova" label="Nova Escala"
+            active={ativo('/escalas/nova')} aria-current={ativo('/escalas/nova') ? 'page' : undefined} />
           {canLayouts && (
             <NavLink className={classes.link} component={Link} to="/layouts" label="Layouts"
-              active={ativo('/layouts')} leftSection={<IconTemplate size={16} />} />
+              active={ativo('/layouts')} aria-current={ativo('/layouts') ? 'page' : undefined} leftSection={<IconTemplate size={16} />} />
           )}
         </NavLink>
         {canExecutar && (
           <NavLink className={classes.link} component={Link} to="/execucao" label="Execução"
-            active={ativo('/execucao')} leftSection={<IconClipboardCheck size={18} />} />
+            active={ativo('/execucao')} aria-current={ativo('/execucao') ? 'page' : undefined} leftSection={<IconClipboardCheck size={18} />} />
         )}
         {canValidar && (
           <NavLink className={classes.link} component={Link} to="/validacao" label="Validação"
-            active={ativo('/validacao')} leftSection={<IconShieldCheck size={18} />} />
+            active={ativo('/validacao')} aria-current={ativo('/validacao') ? 'page' : undefined} leftSection={<IconShieldCheck size={18} />} />
         )}
         {canValidar && (
           <NavLink className={classes.link} component={Link} to="/aprovacao" label="Aprovação de Escalas"
-            active={ativo('/aprovacao')} leftSection={<IconGavel size={18} />} />
+            active={ativo('/aprovacao')} aria-current={ativo('/aprovacao') ? 'page' : undefined} leftSection={<IconGavel size={18} />} />
         )}
         {sa && (
           <NavLink className={classes.link} component={Link} to="/funcao-patentes" label="Elegibilidade (Funções)"
-            active={ativo('/funcao-patentes')} leftSection={<IconUserCheck size={18} />} />
+            active={ativo('/funcao-patentes')} aria-current={ativo('/funcao-patentes') ? 'page' : undefined} leftSection={<IconUserCheck size={18} />} />
         )}
       </AppShell.Navbar>
 
