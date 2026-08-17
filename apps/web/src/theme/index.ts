@@ -2,6 +2,7 @@ import { createTheme, rem } from '@mantine/core';
 import { cbmrn, gray, dark } from './palette';
 
 export { contrastRatio } from './contrast';
+export * from './semantic';
 
 export const theme = createTheme({
   primaryColor: 'cbmrn',
