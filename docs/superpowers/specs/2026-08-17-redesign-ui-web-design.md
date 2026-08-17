@@ -206,7 +206,7 @@ ad-hoc contado na seção 1.
 | `EmptyState` | 17 textos `dimmed` | `icon`, `title`, `description?`, `action?` |
 | `LoadingState` | 12 `<Loader/>` | `variant: 'table' \| 'cards' \| 'form'` (esqueleto) |
 | `ErrorState` | nada (hoje não existe) | `message`, `onRetry?` |
-| `StatusBadge` | `StatusExecucaoBadge` + badges soltos | `status` → token + rótulo |
+| `StatusBadge` | badges de estado de **escala** soltos | `status` → token + rótulo |
 | `ColorSchemeToggle` | nada | botão no cabeçalho |
 
 `LoadingState` usa esqueleto com a forma do conteúdo real, não um giro centralizado.
@@ -215,6 +215,11 @@ quando os dados chegam.
 
 `StatusBadge` centraliza o mapa estado→cor→rótulo que hoje está espalhado. Passa a ser o
 único lugar que sabe que `em_validacao` se escreve "Em validação" e é âmbar.
+
+O `StatusExecucaoBadge` existente **não é absorvido**. Ele modela a máquina de estados de
+*execução* (`pendente`/`registrada`/`validada`/`rejeitada`), que é outra do estado de
+*escala*. Fundir as duas seria unificar dois vocabulários de domínio — mudança de domínio,
+não de acabamento. Ele apenas herda os defaults de `Badge`.
 
 ## 6. AppShell
 
