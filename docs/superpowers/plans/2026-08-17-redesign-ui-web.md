@@ -21,6 +21,12 @@
 - **Comando de verificação ao fim de toda tarefa:**
   `pnpm --filter @escalas/web test && pnpm --filter @escalas/web build && pnpm --filter @escalas/web lint`
   (`build` roda `tsc --noEmit` antes do Vite — é o typecheck.)
+- **`noUnusedLocals` e `noUnusedParameters` estão LIGADOS** no `apps/web/tsconfig.json`. Ao
+  remover JSX, remova também o import, o `useState`, o handler e os tipos que só ele usava —
+  senão `tsc --noEmit` falha com `TS6133`. Isto morde principalmente as Tasks 11, 12 e 13, que
+  retiram `Title`, `Loader` e `Text` de muitos arquivos.
+- **`moduleResolution` é `Bundler`** — `import ... from './theme'` resolve `./theme/index.ts`.
+  Verificado no `tsconfig.json`; nenhum import precisa mudar quando `theme.ts` vira diretório.
 - **Commits em português**, prefixo emoji, seguindo o histórico do repositório (`✨ feat(web):`, `💄 style(web):`, `♻️ refactor(web):`).
 - Trabalhar na branch **`main`** (estratégia do projeto). **Não fazer push** — o push é decisão do usuário.
 
@@ -288,7 +294,6 @@ import { createTheme, rem } from '@mantine/core';
 import { cbmrn, gray, dark } from './palette';
 
 export { contrastRatio } from './contrast';
-export * from './semantic';
 
 export const theme = createTheme({
   primaryColor: 'cbmrn',
@@ -339,7 +344,8 @@ export const theme = createTheme({
 });
 ```
 
-> `export * from './semantic'` só resolve na Task 3. Nesta tarefa, **omita essa linha** e adicione-a na Task 3.
+> O reexport de `./semantic` **não** aparece aqui de propósito — esse módulo só nasce na Task 3,
+> e a linha quebraria o build agora. A Task 3 a adiciona.
 
 - [ ] **Step 4: Criar `apps/web/src/styles/global.css`**
 
@@ -1849,7 +1855,8 @@ Em `ExecucaoVagaRow.tsx`, trocar o `<Group>` de topo por:
 <Group gap="xs" wrap="wrap" align="flex-start">
 ```
 
-E garantir que todo controle interativo da linha tenha `size="sm"` no desktop mas altura mínima de toque no celular — adicionar ao CSS module da Task 14:
+E garantir que todo controle interativo da linha tenha altura mínima de toque no celular.
+CSS fica junto do seu componente — criar `apps/web/src/features/execucao/ExecucaoVagaRow.module.css`:
 
 ```css
 @media (max-width: $mantine-breakpoint-sm) {
@@ -1859,7 +1866,8 @@ E garantir que todo controle interativo da linha tenha `size="sm"` no desktop ma
 }
 ```
 
-Aplicar `className={classes.linhaVaga}` no elemento raiz de `ExecucaoVagaRow`.
+Em `ExecucaoVagaRow.tsx`, importar `classes from './ExecucaoVagaRow.module.css'` e aplicar
+`className={classes.linhaVaga}` no elemento raiz.
 
 - [ ] **Step 7: Rodar o teste e confirmar que passa**
 
@@ -1924,14 +1932,26 @@ Procurar por: texto ilegível, rolagem horizontal do corpo da página, botão co
 
 - [ ] **Step 4: Verificar contraste nos pares que o teste automático não cobre**
 
-Num console de node, dentro de `apps/web`:
+O Node não importa TypeScript direto; use o vitest, que já está configurado. Criar
+`apps/web/src/theme/contraste-qa.test.ts`, rodar, e **manter no repositório** — estes pares
+merecem trava permanente, não conferência manual:
 
-```js
-const { contrastRatio } = await import('./src/theme/contrast.ts');
-// Texto secundário sobre superfície de cartão, nas duas polaridades:
-contrastRatio('#6e7e90', '#ffffff');  // gray.6 sobre branco   → deve ser >= 4.5
-contrastRatio('#8b95a1', '#1f262e');  // dark.2 sobre dark.7   → deve ser >= 4.5
+```ts
+import { contrastRatio } from './contrast';
+
+// Texto secundário sobre superfície de cartão, nas duas polaridades.
+it('gray.6 sobre branco passa AA', () => {
+  expect(contrastRatio('#6e7e90', '#ffffff')).toBeGreaterThanOrEqual(4.5);
+});
+it('dark.2 sobre o corpo dark.7 passa AA', () => {
+  expect(contrastRatio('#8b95a1', '#1f262e')).toBeGreaterThanOrEqual(4.5);
+});
 ```
+
+Run: `pnpm --filter @escalas/web test src/theme/contraste-qa.test.ts`
+
+Se qualquer um falhar, escureça (modo claro) ou clareie (modo escuro) o shade correspondente
+em `palette.ts` e rode a suíte inteira de novo. **Não relaxe a asserção.**
 
 - [ ] **Step 5: Relatar**
 
