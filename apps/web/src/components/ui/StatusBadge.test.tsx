@@ -12,7 +12,9 @@ it('cobre os cinco estados de escala', () => {
   const rotulos = ['Rascunho', 'Publicada', 'Em validação', 'Aprovada', 'Rejeitada'];
   estados.forEach((e, i) => {
     const { unmount } = renderWithProviders(<StatusBadge status={e} />);
-    expect(screen.getByText(rotulos[i])).toBeInTheDocument();
+    // rotulos tem o mesmo tamanho fixo de estados; noUncheckedIndexedAccess exige a asserção
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(screen.getByText(rotulos[i]!)).toBeInTheDocument();
     unmount();
   });
 });
