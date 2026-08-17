@@ -1,10 +1,12 @@
 import { createTheme, rem } from '@mantine/core';
 import { cbmrn, gray, dark } from './palette';
+import { componentes } from './components';
 
 export { contrastRatio } from './contrast';
 export * from './semantic';
 
 export const theme = createTheme({
+  components: componentes,
   primaryColor: 'cbmrn',
   // Shade 7, não o default 6: o 6 dá 4,50:1 sobre branco — no limite exato do AA.
   primaryShade: { light: 7, dark: 5 },
