@@ -1936,15 +1936,19 @@ O Node não importa TypeScript direto; use o vitest, que já está configurado. 
 `apps/web/src/theme/contraste-qa.test.ts`, rodar, e **manter no repositório** — estes pares
 merecem trava permanente, não conferência manual:
 
+Lê os valores da paleta em vez de fixar hex — assim o teste não deriva quando um shade é
+ajustado (o `gray[6]` já mudou uma vez, na Task 1):
+
 ```ts
 import { contrastRatio } from './contrast';
+import { gray, dark } from './palette';
 
-// Texto secundário sobre superfície de cartão, nas duas polaridades.
+// Texto secundário sobre superfície, nas duas polaridades.
 it('gray.6 sobre branco passa AA', () => {
-  expect(contrastRatio('#6e7e90', '#ffffff')).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(gray[6], '#ffffff')).toBeGreaterThanOrEqual(4.5);
 });
 it('dark.2 sobre o corpo dark.7 passa AA', () => {
-  expect(contrastRatio('#8b95a1', '#1f262e')).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(dark[2], dark[7])).toBeGreaterThanOrEqual(4.5);
 });
 ```
 
