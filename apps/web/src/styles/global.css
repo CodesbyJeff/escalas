@@ -1,0 +1,27 @@
+/* Algarismos tabulares: sem isto a coluna "08:00 – 08:00" dança conforme o dígito. */
+table,
+.mantine-Badge-root,
+[data-tabular] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Títulos ligeiramente mais apertados — leitura técnica, não editorial. */
+h1, h2, h3, h4, h5, h6,
+.mantine-Title-root {
+  letter-spacing: -0.01em;
+}
+
+/* Foco sempre visível e destacado da borda do elemento. */
+:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
