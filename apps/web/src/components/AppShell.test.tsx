@@ -69,3 +69,27 @@ describe('AppShellNav gating', () => {
     expect(screen.queryByText('Layouts')).not.toBeInTheDocument();
   });
 });
+
+describe('AppShellNav — cromo', () => {
+  it('a navbar não é mais um bloco vermelho sólido', () => {
+    const { container } = renderWithProviders(
+      <AppShellNav nome="A" papel="x" canExecutar={false} canValidar={false} canLayouts={false} onLogout={() => {}} />,
+    );
+    const navbar = container.querySelector('.mantine-AppShell-navbar');
+    expect(navbar?.className).not.toContain('cbmrn');
+  });
+
+  it('tem alternador de tema no cabeçalho', () => {
+    renderWithProviders(
+      <AppShellNav nome="A" papel="x" canExecutar={false} canValidar={false} canLayouts={false} onLogout={() => {}} />,
+    );
+    expect(screen.getByRole('button', { name: /tema/i })).toBeInTheDocument();
+  });
+
+  it('mostra a marca no cabeçalho', () => {
+    renderWithProviders(
+      <AppShellNav nome="A" papel="x" canExecutar={false} canValidar={false} canLayouts={false} onLogout={() => {}} />,
+    );
+    expect(screen.getAllByText('Escalas CBMRN').length).toBeGreaterThan(0);
+  });
+});
