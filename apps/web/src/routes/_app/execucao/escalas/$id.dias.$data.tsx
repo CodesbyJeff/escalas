@@ -1,7 +1,7 @@
 // apps/web/src/routes/_app/execucao/escalas/$id.dias.$data.tsx
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Group, Loader, Modal, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
@@ -12,6 +12,7 @@ import { militaresApi } from '../../../../lib/api/militares';
 import { ApiError } from '../../../../lib/api/client';
 import { useExecucaoDraft } from '../../../../features/execucao/useExecucaoDraft';
 import { ExecucaoDiaView } from '../../../../features/execucao/ExecucaoDiaView';
+import { PageHeader, LoadingState } from '../../../../components/ui';
 
 export const Route = createFileRoute('/_app/execucao/escalas/$id/dias/$data')({ component: FiscalDiaPage });
 
@@ -27,7 +28,7 @@ export function FiscalDiaScreen({ escalaId, data }: { escalaId: number; data: st
   const { data: militares = [] } = useQuery({
     queryKey: ['militares', escalaId], queryFn: () => militaresApi.listar(escalaId),
   });
-  if (isLoading || !dia) return <Loader />;
+  if (isLoading || !dia) return <LoadingState variant="cards" linhas={4} />;
   const map = new Map<number, string>(militares.map((m) => [m.id, [m.posto, m.nome_curto ?? m.nome].filter(Boolean).join(' ')]));
   const getMilitarNome = (mid: number) => map.get(mid) ?? String(mid);
   return <FiscalDiaForm escalaId={escalaId} data={data} dia={dia} getMilitarNome={getMilitarNome} />;
@@ -72,15 +73,16 @@ function FiscalDiaForm({ escalaId, data, dia, getMilitarNome }: {
 
   return (
     <Stack>
-      <Group justify="space-between">
-        <Title order={4}>Execução — {data}</Title>
-        {editavel && (
-          <Group>
+      <PageHeader
+        title="Execução"
+        subtitle={`Dia ${data}`}
+        actions={editavel && (
+          <>
             <Button onClick={() => salvar.mutate()} loading={salvar.isPending}>Salvar</Button>
             <Button color="cbmrn" onClick={confirm.open}>Fechar para validação</Button>
-          </Group>
+          </>
         )}
-      </Group>
+      />
       {dia.execucao_status === 'validada' && (
         <Alert color="blue">Dia validado.</Alert>
       )}

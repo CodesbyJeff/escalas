@@ -1,6 +1,7 @@
-import { Button, Table, Text } from '@mantine/core';
+import { Button, Table } from '@mantine/core';
 import type { ExecucaoPendenteDTO } from '@escalas/shared-types';
 import { StatusExecucaoBadge } from './StatusExecucaoBadge';
+import { EmptyState } from '../../components/ui';
 
 export function ExecucaoWorklistTable({ itens, actionLabel, emptyText, onAbrir }: {
   itens: ExecucaoPendenteDTO[];
@@ -8,7 +9,7 @@ export function ExecucaoWorklistTable({ itens, actionLabel, emptyText, onAbrir }
   emptyText: string;
   onAbrir: (item: ExecucaoPendenteDTO) => void;
 }) {
-  if (itens.length === 0) return <Text c="dimmed" ta="center" py="xl">{emptyText}</Text>;
+  if (itens.length === 0) return <EmptyState title={emptyText} />;
   return (
     <Table striped highlightOnHover>
       <Table.Thead>

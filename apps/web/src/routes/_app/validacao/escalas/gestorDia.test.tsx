@@ -31,7 +31,7 @@ it('gestor valida o dia e mostra notificação', async () => {
   server.use(http.post(`${BASE}/escalas/2/execucao/2026-06-25/validar`, () =>
     HttpResponse.json({ success: true, message: 'ok', data: diaRegistrada({ execucao_status: 'validada', validado_em: '2026-06-25T12:00:00.000Z' }) })));
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/validação — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Validação' });
   await userEvent.click(screen.getByRole('button', { name: /^validar$/i }));
   await waitFor(() => expect(screen.getByText(/execução validada/i)).toBeInTheDocument());
 });
@@ -39,7 +39,7 @@ it('gestor valida o dia e mostra notificação', async () => {
 it('rejeitar exige justificativa (botão confirmar desabilitado sem texto)', async () => {
   mockBase(diaRegistrada());
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/validação — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Validação' });
   await userEvent.click(screen.getByRole('button', { name: /rejeitar/i }));
   expect(screen.getByRole('button', { name: /confirmar rejeição/i })).toBeDisabled();
 });
@@ -49,7 +49,7 @@ it('rejeitar com justificativa envia e notifica', async () => {
   server.use(http.post(`${BASE}/escalas/2/execucao/2026-06-25/validar`, () =>
     HttpResponse.json({ success: true, message: 'ok', data: diaRegistrada({ execucao_status: 'rejeitada', justificativa: 'refazer' }) })));
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/validação — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Validação' });
   await userEvent.click(screen.getByRole('button', { name: /rejeitar/i }));
   await userEvent.type(screen.getByLabelText(/justificativa/i), 'refazer');
   await userEvent.click(screen.getByRole('button', { name: /confirmar rejeição/i }));
@@ -59,6 +59,6 @@ it('rejeitar com justificativa envia e notifica', async () => {
 it('quando já validada, não mostra ações', async () => {
   mockBase(diaRegistrada({ execucao_status: 'validada', validado_em: '2026-06-25T12:00:00.000Z' }));
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/validação — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Validação' });
   expect(screen.queryByRole('button', { name: /^validar$/i })).not.toBeInTheDocument();
 });

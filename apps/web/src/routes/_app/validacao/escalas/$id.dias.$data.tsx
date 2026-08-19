@@ -1,7 +1,7 @@
 // apps/web/src/routes/_app/validacao/escalas/$id.dias.$data.tsx
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Group, Loader, Modal, Stack, Textarea, Title } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Textarea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
@@ -11,6 +11,7 @@ import { execucaoApi } from '../../../../lib/api/execucao';
 import { militaresApi } from '../../../../lib/api/militares';
 import { ApiError } from '../../../../lib/api/client';
 import { ExecucaoDiaView } from '../../../../features/execucao/ExecucaoDiaView';
+import { PageHeader, LoadingState } from '../../../../components/ui';
 
 export const Route = createFileRoute('/_app/validacao/escalas/$id/dias/$data')({ component: GestorDiaPage });
 
@@ -26,7 +27,7 @@ export function GestorDiaScreen({ escalaId, data }: { escalaId: number; data: st
   const { data: militares = [] } = useQuery({
     queryKey: ['militares', escalaId], queryFn: () => militaresApi.listar(escalaId),
   });
-  if (isLoading || !dia) return <Loader />;
+  if (isLoading || !dia) return <LoadingState variant="cards" linhas={4} />;
   const map = new Map<number, string>(militares.map((m) => [m.id, [m.posto, m.nome_curto ?? m.nome].filter(Boolean).join(' ')]));
   const getMilitarNome = (mid: number) => map.get(mid) ?? String(mid);
   return <GestorDiaView escalaId={escalaId} data={data} dia={dia} getMilitarNome={getMilitarNome} />;
@@ -57,15 +58,16 @@ function GestorDiaView({ escalaId, data, dia, getMilitarNome }: {
 
   return (
     <Stack>
-      <Group justify="space-between">
-        <Title order={4}>Validação — {data}</Title>
-        {podeValidar && (
-          <Group>
+      <PageHeader
+        title="Validação"
+        subtitle={`Dia ${data}`}
+        actions={podeValidar && (
+          <>
             <Button color="green" onClick={() => validar.mutate({ status: 'validada' })} loading={validar.isPending}>Validar</Button>
             <Button color="red" variant="light" onClick={rejeitar.open}>Rejeitar</Button>
-          </Group>
+          </>
         )}
-      </Group>
+      />
       {dia.execucao_status === 'validada' && <Alert color="green">Dia validado{dia.validado_em ? ` em ${dia.validado_em.slice(0, 10)}` : ''}.</Alert>}
       {dia.execucao_status === 'pendente' && <Alert color="gray">Ainda não fechado pelo fiscal.</Alert>}
       <ExecucaoDiaView escalaId={escalaId} dia={dia} getMilitarNome={getMilitarNome} mode="validar" />

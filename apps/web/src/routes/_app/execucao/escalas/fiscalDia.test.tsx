@@ -29,7 +29,7 @@ it('fiscal salva a execução e mostra notificação', async () => {
   mockBase(diaPendente());
   server.use(http.put(`${BASE}/escalas/2/execucao/2026-06-25`, () => HttpResponse.json({ success: true, message: 'ok', data: diaPendente() })));
   renderWithProviders(<FiscalDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/execução — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Execução' });
   await userEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
   await waitFor(() => expect(screen.getByText(/execução salva/i)).toBeInTheDocument());
 });
@@ -39,7 +39,7 @@ it('mostra alerta inline no 422 ao salvar', async () => {
   server.use(http.put(`${BASE}/escalas/2/execucao/2026-06-25`, () =>
     HttpResponse.json({ success: false, message: 'Vaga 99 não pertence ao dia.', data: null }, { status: 422 })));
   renderWithProviders(<FiscalDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/execução — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Execução' });
   await userEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
   await waitFor(() => {
     const alerts = screen.getAllByRole('alert');
@@ -52,7 +52,7 @@ it('fecha para validação com confirmação', async () => {
   server.use(http.post(`${BASE}/escalas/2/execucao/2026-06-25/fechar`, () =>
     HttpResponse.json({ success: true, message: 'ok', data: diaPendente({ execucao_status: 'registrada' }) })));
   renderWithProviders(<FiscalDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/execução — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Execução' });
   await userEvent.click(screen.getByRole('button', { name: /fechar para validação/i }));
   // confirma no modal
   await userEvent.click(screen.getByRole('button', { name: /confirmar/i }));
@@ -65,7 +65,7 @@ it('quando registrada, fica somente leitura (sem botões de ação)', async () =
       vagas: [{ id: 10, funcao: 'Comandante', militar_id: 4, turno_inicio: '07:00', turno_fim: '19:00',
         execucao: { vaga_id: 10, situacao: 'presente', militar_executado_id: null, do: false, observacoes: null } }] }] }));
   renderWithProviders(<FiscalDiaScreen escalaId={2} data="2026-06-25" />);
-  await screen.findByText(/execução — 2026-06-25/i);
+  await screen.findByRole('heading', { name: 'Execução' });
   expect(screen.queryByRole('button', { name: /^salvar$/i })).not.toBeInTheDocument();
   expect(screen.getByText(/aguardando validação/i)).toBeInTheDocument();
 });
