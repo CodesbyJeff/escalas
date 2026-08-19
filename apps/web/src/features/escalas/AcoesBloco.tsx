@@ -51,7 +51,7 @@ export function AcoesBloco({ escalaId, lotacaoId, ano, mes, disabled }: {
 
   return (
     <Stack>
-      <Title order={4}>Ações de Bloco — {String(mes).padStart(2, '0')}/{ano}</Title>
+      <Title order={5}>Ações de Bloco — {String(mes).padStart(2, '0')}/{ano}</Title>
       <Group grow align="flex-start">
         <Paper p="md" withBorder>
           <Stack>

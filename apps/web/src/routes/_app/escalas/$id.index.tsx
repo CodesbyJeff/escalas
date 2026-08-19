@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Group, Loader, Stack, Title, Text } from '@mantine/core';
+import { Box, Group, Stack, Text } from '@mantine/core';
 import { escalasApi } from '../../../lib/api/escalas';
 import { SeletorDeDia } from '../../../features/escalas/SeletorDeDia';
 import { AcoesBloco } from '../../../features/escalas/AcoesBloco';
 import { PreenchimentoAuto } from '../../../features/escalas/PreenchimentoAuto';
+import { PageHeader, LoadingState } from '../../../components/ui';
 
 export const Route = createFileRoute('/_app/escalas/$id/')({ component: DetalhePage });
 
@@ -17,10 +18,10 @@ function DetalhePage() {
   const { data: escalaDetalhe } = useQuery({
     queryKey: ['escala', Number(id)], queryFn: () => escalasApi.detalhe(Number(id)),
   });
-  if (isLoading || !escala) return <Loader />;
+  if (isLoading || !escala) return <LoadingState variant="cards" linhas={3} />;
   return (
     <Stack>
-      <Title order={3}>Escala {String(escala.mes).padStart(2, '0')}/{escala.ano}</Title>
+      <PageHeader title={`Escala ${String(escala.mes).padStart(2, '0')}/${escala.ano}`} />
       <Text>Clique no dia para editar</Text>
       <SeletorDeDia
         mes={escala.mes} ano={escala.ano} dias={escala.dias}

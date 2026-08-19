@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Group, Loader, Stack, Title, Breadcrumbs, Anchor } from '@mantine/core';
+import { Button, Stack, Breadcrumbs, Anchor } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { escalasApi } from '../../../lib/api/escalas';
 import { EscalasTable } from '../../../features/escalas/EscalasTable';
+import { PageHeader, LoadingState } from '../../../components/ui';
 
 export const Route = createFileRoute('/_app/escalas/')({ component: ListarPage });
 
@@ -19,11 +20,11 @@ function ListarPage() {
   return (
     <Stack>
       <Breadcrumbs><Anchor href="#">Escalas CBMRN</Anchor><span>Listar Escalas</span></Breadcrumbs>
-      <Group justify="space-between">
-        <Title order={3}>Lista de Escalas</Title>
-        <Button onClick={() => navigate({ to: '/escalas/nova' })}>Nova Escala</Button>
-      </Group>
-      {isLoading ? <Loader /> : (
+      <PageHeader
+        title="Lista de Escalas"
+        actions={<Button onClick={() => navigate({ to: '/escalas/nova' })}>Nova Escala</Button>}
+      />
+      {isLoading ? <LoadingState variant="table" /> : (
         <EscalasTable
           escalas={data ?? []}
           onEditar={(e) => navigate({ to: '/escalas/$id', params: { id: String(e.id) } })}

@@ -5,6 +5,7 @@ import { notifications } from '@mantine/notifications';
 import type { PreenchimentoSugestaoDTO } from '@escalas/shared-types';
 import { escalasApi } from '../../lib/api/escalas';
 import { ApiError } from '../../lib/api/client';
+import { EmptyState } from '../../components/ui';
 
 export function PreenchimentoAuto({ escalaId, rascunho }: { escalaId: number; rascunho?: boolean }) {
   const queryClient = useQueryClient();
@@ -45,7 +46,7 @@ export function PreenchimentoAuto({ escalaId, rascunho }: { escalaId: number; ra
   return (
     <Paper p="md" withBorder>
       <Stack>
-        <Title order={4}>Preenchimento Automático</Title>
+        <Title order={5}>Preenchimento Automático</Title>
         <Group align="flex-end">
           <TextInput
             label="Data Início" placeholder="YYYY-MM-DD" value={dataIni}
@@ -74,7 +75,10 @@ export function PreenchimentoAuto({ escalaId, rascunho }: { escalaId: number; ra
         </Group>
         {sugerir.isSuccess && (
           sugestoes.length === 0 ? (
-            <Text c="dimmed">Nenhuma vaga aberta no intervalo.</Text>
+            <EmptyState
+              title="Nenhuma vaga aberta no intervalo."
+              description="Ajuste as datas ou confira se a estrutura da escala já foi gerada para esse período."
+            />
           ) : (
             <Table>
               <Table.Thead>

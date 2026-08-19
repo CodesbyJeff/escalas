@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Group, Loader, Paper, SimpleGrid, Stack, Title, Alert } from '@mantine/core';
+import { Button, Paper, SimpleGrid, Stack, Alert } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import type { EscalaDiaDTO } from '@escalas/shared-types';
@@ -10,6 +10,7 @@ import { useDiaDraft } from '../../../features/escalas/useDiaDraft';
 import { contarVagasComAviso } from '../../../features/escalas/avisosPatente';
 import { GuarnicaoCard } from '../../../components/GuarnicaoCard';
 import { ApiError } from '../../../lib/api/client';
+import { PageHeader, LoadingState } from '../../../components/ui';
 
 export const Route = createFileRoute('/_app/escalas/$id/dias/$data')({ component: EditorPage });
 
@@ -22,7 +23,7 @@ export function EditorDia({ escalaId, data }: { escalaId: number; data: string }
   const { data: dia, isLoading } = useQuery({
     queryKey: ['dia', escalaId, data], queryFn: () => escalasApi.getDia(escalaId, data),
   });
-  if (isLoading || !dia) return <Loader />;
+  if (isLoading || !dia) return <LoadingState variant="cards" linhas={6} />;
   return <EditorDiaForm key={dia.id} escalaId={escalaId} data={data} diaInicial={dia} />;
 }
 
@@ -69,15 +70,18 @@ function EditorDiaForm({ escalaId, data, diaInicial }: { escalaId: number; data:
   });
   return (
     <Stack>
-      <Group justify="space-between">
-        <Title order={4}>Quadro de Escala — dia {data}</Title>
-        <Group>
-          <Button variant="default" onClick={() => draft.addGuarnicao()}>Adicionar Guarnição</Button>
-          <Button variant="default" disabled title="Em breve: duplicar de outro dia">Duplicar Dia</Button>
-          <Button onClick={() => salvar.mutate()} loading={salvar.isPending}>Salvar</Button>
-          <Button color="cbmrn" onClick={() => publicar.mutate()} loading={publicar.isPending}>Publicar Escala</Button>
-        </Group>
-      </Group>
+      <PageHeader
+        title="Quadro de Escala"
+        subtitle={`Dia ${data}`}
+        actions={
+          <>
+            <Button variant="default" onClick={() => draft.addGuarnicao()}>Adicionar Guarnição</Button>
+            <Button variant="default" disabled title="Em breve: duplicar de outro dia">Duplicar Dia</Button>
+            <Button variant="default" onClick={() => salvar.mutate()} loading={salvar.isPending}>Salvar</Button>
+            <Button onClick={() => publicar.mutate()} loading={publicar.isPending}>Publicar Escala</Button>
+          </>
+        }
+      />
       {conflito && <Alert color="red" title="Conflito de turno">{conflito}</Alert>}
       <Paper p="md" withBorder>
         <SimpleGrid cols={{ base: 1, md: 3 }}>

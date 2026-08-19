@@ -1,8 +1,9 @@
 import { useForm, zodResolver } from '@mantine/form';
-import { Paper, Stack, Select, NumberInput, Button, Title, Text } from '@mantine/core';
+import { Paper, Stack, Select, NumberInput, Button, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { criarEscalaSchema, type CriarEscalaInput } from '@escalas/shared-schemas';
 import { layoutsApi } from '../../lib/api/layouts';
+import { PageHeader } from '../../components/ui';
 
 const now = new Date();
 export function NovaEscalaForm({ lotacoes, onSubmit }: {
@@ -29,7 +30,7 @@ export function NovaEscalaForm({ lotacoes, onSubmit }: {
     <Paper p="xl" maw={520} withBorder>
       <form onSubmit={form.onSubmit(onSubmit)}>
         <Stack>
-          <Title order={3}>Criar Escala</Title>
+          <PageHeader title="Criar Escala" />
           <Select
             label="Lotação" placeholder="Selecione uma lotação..." data={lotacoes}
             value={form.values.lotacao_id ? String(form.values.lotacao_id) : null}
