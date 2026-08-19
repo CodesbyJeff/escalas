@@ -30,7 +30,7 @@ export function ExecucaoVagaRow({ escalaId, vaga, getMilitarNome, mode, draft, o
   if (mode === 'validar') {
     const ex = vaga.execucao;
     return (
-      <Group className={classes.linhaVaga} justify="space-between" wrap="wrap" gap="xs">
+      <Group className={`${classes.linhaVaga} ${classes.toqueConfortavel}`} justify="space-between" wrap="wrap" gap="xs">
         <Text size="sm" fw={500}>{vaga.funcao} — <Text span c="dimmed">{previsto}</Text></Text>
         {ex ? (
           <Group gap="xs">
@@ -47,7 +47,7 @@ export function ExecucaoVagaRow({ escalaId, vaga, getMilitarNome, mode, draft, o
   const d = draft!;
   const mostrarPicker = d.situacao === 'substituido' || d.situacao === 'preenchido';
   return (
-    <Stack gap={4}>
+    <Stack gap={4} className={classes.toqueConfortavel}>
       <Group className={classes.linhaVaga} justify="space-between" wrap="wrap">
         <Text size="sm" fw={500}>{vaga.funcao} — <Text span c="dimmed">{previsto}</Text></Text>
         <Switch

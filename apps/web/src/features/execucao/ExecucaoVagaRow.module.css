@@ -1,9 +1,11 @@
 @media (max-width: $mantine-breakpoint-sm) {
+  /* Só para os Groups de cabeçalho, onde não há inputs a esticar. */
   .linhaVaga {
     align-items: flex-start;
   }
 
-  .linhaVaga :is(button, input, [role='combobox'], [role='radio']) {
+  /* Aplicável em qualquer raiz, inclusive Stack: não mexe em alinhamento. */
+  .toqueConfortavel :is(button, input, [role='combobox'], [role='radio']) {
     min-height: 44px;
   }
 }
