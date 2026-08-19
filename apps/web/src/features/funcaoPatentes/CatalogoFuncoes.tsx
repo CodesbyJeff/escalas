@@ -5,7 +5,6 @@ import {
   Select,
   Stack,
   Table,
-  Title,
   Text,
   Group,
   Button,
@@ -21,6 +20,7 @@ import { patentesApi } from '../../lib/api/patentes';
 import { lotacoesApi } from '../../lib/api/lotacoes';
 import { funcaoPatentesApi } from '../../lib/api/funcaoPatentes';
 import { ApiError } from '../../lib/api/client';
+import { PageHeader } from '../../components/ui';
 
 type Escopo = 'global' | 'lotacao';
 
@@ -89,7 +89,7 @@ export function CatalogoFuncoes() {
 
   return (
     <Stack>
-      <Title order={3} c="cbmrn.7">Elegibilidade por Função</Title>
+      <PageHeader title="Elegibilidade por Função" />
       <Group align="flex-end">
         <SegmentedControl
           value={escopo}

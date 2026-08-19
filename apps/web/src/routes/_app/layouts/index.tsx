@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Group, Loader, Select, Stack, Table, Text, Title } from '@mantine/core';
+import { Button, Group, Select, Stack, Table, Text } from '@mantine/core';
 import type { CriarLayoutInput } from '@escalas/shared-schemas';
 import { notifications } from '@mantine/notifications';
 import { layoutsApi } from '../../../lib/api/layouts';
@@ -9,6 +9,7 @@ import { useLotacoesDoUsuario } from '../../../features/escalas/useLotacoesDoUsu
 import { useLayoutDraft } from '../../../features/layouts/useLayoutDraft';
 import { LayoutEditor } from '../../../features/layouts/LayoutEditor';
 import { ApiError } from '../../../lib/api/client';
+import { PageHeader, LoadingState } from '../../../components/ui';
 
 export const Route = createFileRoute('/_app/layouts/')({ component: LayoutsPage });
 
@@ -20,7 +21,7 @@ export function LayoutsView({ lotacoes }: { lotacoes: { value: string; label: st
 
   return (
     <Stack>
-      <Title order={3} c="cbmrn.7">Layouts de Escala</Title>
+      <PageHeader title="Layouts de Escala" />
       <Select label="Lotação" placeholder="Selecione..." data={lotacoes}
         value={lotacaoId ? String(lotacaoId) : null} onChange={(v) => { setLotacaoId(v ? Number(v) : null); setEditId(null); }} w={320} />
       {lotacaoId && editId === null && (
@@ -56,7 +57,7 @@ function LayoutForm({ lotacaoId, editId, onDone }: { lotacaoId: number; editId: 
   const { data: existente, isLoading } = useQuery({ queryKey: ['layout', editId], queryFn: () => layoutsApi.obter(editId as number), enabled: editId !== 'novo' });
   // Só monta o form (que semeia o useLayoutDraft) depois que o layout carregou — senão o
   // draft inicializa vazio e nunca repopula (o useForm lê initialValues só no 1º render).
-  if (editId !== 'novo' && (isLoading || !existente)) return <Loader />;
+  if (editId !== 'novo' && (isLoading || !existente)) return <LoadingState variant="form" linhas={4} />;
   const inicial: CriarLayoutInput | undefined = existente
     ? { nome: existente.nome, politica_localidade: existente.politica_localidade, guarnicoes: existente.guarnicoes.map((g) => ({ sigla: g.sigla, atividade: g.atividade, turno_padrao_inicio: g.turno_padrao_inicio, turno_padrao_fim: g.turno_padrao_fim, ordem: g.ordem, ciclo_dias: g.ciclo_dias ?? undefined, vagas_sugeridas: g.vagas_sugeridas.map((v) => ({ funcao: v.funcao, quantidade_sugerida: v.quantidade_sugerida, patentes_esperadas: v.patentes_esperadas ?? [] })) })) }
     : undefined;

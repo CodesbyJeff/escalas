@@ -1,9 +1,10 @@
 // apps/web/src/routes/_app/aprovacao/index.tsx
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Loader, Stack, Table, Text, Title, Button, Badge } from '@mantine/core';
+import { Stack, Table, Text, Button, Badge } from '@mantine/core';
 import type { EscalaDTO } from '@escalas/shared-types';
 import { validacoesApi } from '../../../lib/api/validacoes';
+import { PageHeader, LoadingState } from '../../../components/ui';
 
 export const Route = createFileRoute('/_app/aprovacao/')({ component: AprovacaoWorklistPage });
 
@@ -14,11 +15,10 @@ function AprovacaoWorklistPage() {
 
 export function AprovacaoWorklist({ onAbrir }: { onAbrir: (e: EscalaDTO) => void }) {
   const { data = [], isLoading } = useQuery({ queryKey: ['validacoes', 'pendentes'], queryFn: validacoesApi.pendentes });
-  if (isLoading) return <Loader />;
   return (
     <Stack>
-      <Title order={3} c="cbmrn.7">Aprovação de Escalas</Title>
-      {data.length === 0 ? (
+      <PageHeader title="Aprovação de Escalas" />
+      {isLoading ? <LoadingState variant="table" /> : data.length === 0 ? (
         <Text c="dimmed" ta="center" py="xl">Nenhuma escala aguardando aprovação.</Text>
       ) : (
         <Table striped highlightOnHover>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Center, Loader } from '@mantine/core';
+import { Center } from '@mantine/core';
 import { useAuth } from '../lib/auth/AuthContext';
+import { LoadingState } from './ui';
 
 // Ter token no storage não é estar autenticado — token expirado também é uma string.
 // A autenticação só está confirmada quando o boot do AuthContext devolve um usuário;
@@ -16,7 +17,7 @@ export function GuardaSessao({ children, onAnonimo }: { children: ReactNode; onA
     onAnonimo();
   }, [loading, user, onAnonimo]);
 
-  if (loading) return <Center mih="100vh"><Loader /></Center>;
+  if (loading) return <Center mih="100vh"><LoadingState variant="form" linhas={3} /></Center>;
   if (!user) return null;
   return <>{children}</>;
 }

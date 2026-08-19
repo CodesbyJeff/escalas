@@ -14,11 +14,12 @@ export function LoginForm({ onSubmit }: { onSubmit: (v: LoginInput) => Promise<v
     try { await onSubmit(values); } catch (e) { setErro((e as Error).message); }
   });
   return (
-    <Center mih="100vh" bg="gray.1">
+    <Center mih="100vh" bg="var(--mantine-color-body)">
       <Paper p="xl" w={380} radius="md" withBorder>
         <form onSubmit={submit}>
           <Stack>
-            <Title order={3} ta="center" c="cbmrn.7">ESCALAS CBMRN</Title>
+            <Title order={3} ta="center" c="cbmrn.7" darkHidden>ESCALAS CBMRN</Title>
+            <Title order={3} ta="center" c="cbmrn.4" lightHidden>ESCALAS CBMRN</Title>
             {erro && <Alert color="red">{erro}</Alert>}
             <TextInput label="Usuário" placeholder="CPF (11 dígitos)" {...form.getInputProps('cpf')} />
             <PasswordInput label="Senha" {...form.getInputProps('senha')} />

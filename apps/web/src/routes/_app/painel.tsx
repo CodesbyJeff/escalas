@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Loader } from '@mantine/core';
 import dayjs from 'dayjs';
 import { escalasApi } from '../../lib/api/escalas';
 import { militaresApi } from '../../lib/api/militares';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { PainelView } from '../../features/painel/PainelView';
+import { LoadingState } from '../../components/ui';
 
 export const Route = createFileRoute('/_app/painel')({ component: PainelPage });
 
@@ -28,6 +28,6 @@ function PainelPage() {
     (militares ?? []).map((m) => [m.id, [m.posto, m.nome_curto ?? m.nome].filter(Boolean).join(' ')])
   );
   const getMilitarNome = (id: number) => militarMap.get(id) ?? String(id);
-  if (isLoading) return <Loader />;
+  if (isLoading) return <LoadingState variant="cards" linhas={4} />;
   return <PainelView nome={user?.nome ?? ''} dia={dia ?? null} getMilitarNome={getMilitarNome} />;
 }

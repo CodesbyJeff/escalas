@@ -1,7 +1,7 @@
 // apps/web/src/routes/_app/aprovacao/escalas/$id.tsx
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Group, Loader, Modal, SimpleGrid, Stack, Table, Text, Textarea, Title } from '@mantine/core';
+import { Button, Group, Modal, SimpleGrid, Stack, Table, Text, Textarea, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { validacoesApi } from '../../../../lib/api/validacoes';
 import { escalasApi } from '../../../../lib/api/escalas';
 import { ApiError } from '../../../../lib/api/client';
 import { ResumoServicosTable } from '../../../../features/aprovacao/ResumoServicosTable';
+import { PageHeader, LoadingState } from '../../../../components/ui';
 
 export const Route = createFileRoute('/_app/aprovacao/escalas/$id')({ component: AprovacaoEscalaPage });
 
@@ -41,17 +42,19 @@ export function AprovacaoEscalaScreen({ escalaId }: { escalaId: number }) {
     },
   });
 
-  if (l1 || l2 || !mes) return <Loader />;
+  if (l1 || l2 || !mes) return <LoadingState variant="cards" linhas={3} />;
 
   return (
     <Stack>
-      <Group justify="space-between">
-        <Title order={4}>Aprovação — {String(mes.mes).padStart(2, '0')}/{mes.ano}</Title>
-        <Group>
-          <Button color="green" onClick={() => validar.mutate({ status: 'aprovada' })} loading={validar.isPending}>Aprovar</Button>
-          <Button color="red" variant="light" onClick={rejeitar.open}>Rejeitar</Button>
-        </Group>
-      </Group>
+      <PageHeader
+        title={`Aprovação — ${String(mes.mes).padStart(2, '0')}/${mes.ano}`}
+        actions={
+          <>
+            <Button color="green" onClick={() => validar.mutate({ status: 'aprovada' })} loading={validar.isPending}>Aprovar</Button>
+            <Button color="red" variant="light" onClick={rejeitar.open}>Rejeitar</Button>
+          </>
+        }
+      />
       <SimpleGrid cols={{ base: 1, md: 2 }}>
         <Stack gap="xs">
           <Text fw={700}>Prevista (cobertura por dia)</Text>
@@ -69,7 +72,7 @@ export function AprovacaoEscalaScreen({ escalaId }: { escalaId: number }) {
           <ResumoServicosTable itens={resumo} />
         </Stack>
       </SimpleGrid>
-      <Title order={5} mt="md">Divergências de patente</Title>
+      <Title order={2} fz="h5" mt="md">Divergências de patente</Title>
       {avisos.length === 0 ? (
         <Text c="dimmed" size="sm">Nenhuma divergência de patente.</Text>
       ) : (
