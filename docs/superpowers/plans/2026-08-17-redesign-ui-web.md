@@ -1811,119 +1811,145 @@ usar bg=gray.1 (branco no modo escuro); a marca ganha shade por polaridade."
 
 ### Task 14: Responsivo de campo — Execução e Validação em 375px
 
-O fiscal registra execução no quartel, possivelmente no celular.
+O fiscal registra execução no quartel, possivelmente no celular. O gestor valida do mesmo jeito.
+
+> **Esta tarefa foi reescrita depois que as Tasks 12 e 13 mudaram o terreno.** A versão
+> anterior mandava envolver "o grupo de botões de ação existente" em `ExecucaoDiaView.tsx` —
+> mas esse arquivo **não tem botão nenhum**, é só um `<Stack>` de cartões de guarnição. Os
+> botões de ação vivem nas rotas, e desde a Task 12 estão dentro do `actions` do `PageHeader`.
+> A versão anterior também esquecia a tela do gestor por completo.
+
+**O problema real, verificado no código:** desde a Task 12, as ações do dia ficam no
+`PageHeader`, ou seja, **no topo da página**. No desktop isso é ótimo. Em 375px, o fiscal
+rola uma lista longa de vagas e precisa voltar até o topo para salvar. A tela do gestor tem
+o mesmo formato.
 
 **Files:**
+- Modify: `apps/web/src/routes/_app/execucao/escalas/$id.dias.$data.tsx`
+- Modify: `apps/web/src/routes/_app/validacao/escalas/$id.dias.$data.tsx`
+- Create: `apps/web/src/routes/_app/execucao/escalas/diaAcoes.module.css` (compartilhado pelas duas rotas)
 - Modify: `apps/web/src/features/execucao/ExecucaoVagaRow.tsx`
-- Modify: `apps/web/src/features/execucao/ExecucaoGuarnicaoCard.tsx`
-- Modify: `apps/web/src/features/execucao/ExecucaoDiaView.tsx`
-- Create: `apps/web/src/features/execucao/ExecucaoDiaView.module.css`
-- Test: `apps/web/src/features/execucao/ExecucaoDiaView.test.tsx` (acrescentar caso)
+- Create: `apps/web/src/features/execucao/ExecucaoVagaRow.module.css`
+- Test: `apps/web/src/routes/_app/execucao/escalas/fiscalDia.test.tsx` (acrescentar caso)
 
 **Interfaces:**
-- Consumes: nada novo.
-- Produces: nada novo. Só mudanças de layout.
+- Consumes: `PageHeader` de `src/components/ui` (já em uso nas duas rotas desde a Task 12).
+- Produces: nada novo. Só layout — nenhuma assinatura muda.
 
-- [ ] **Step 1: Ler os três componentes antes de editar**
+- [ ] **Step 1: Ler as duas rotas e o `ExecucaoVagaRow` antes de editar**
 
-Estes arquivos passaram por validação ao vivo e não podem mudar de comportamento. Leia-os inteiros primeiro. **Só layout muda; nenhuma lógica de rascunho, nenhuma chamada de API, nenhum handler.**
+Estes arquivos passaram por validação ao vivo e não podem mudar de comportamento. **Só layout
+muda: nenhuma lógica de rascunho, nenhuma chamada de API, nenhum handler, nenhuma mutation.**
+
+Repare em `ExecucaoVagaRow.tsx` que existem **dois caminhos de return** — um para
+`mode === 'validar'` (linha ~31) e outro para o modo de registro (linha ~48), cada um com seu
+próprio `<Group>` raiz. **Os dois precisam do tratamento de toque.** Tratar só um deixa metade
+da tela quebrada, e é a metade que o gestor usa.
 
 - [ ] **Step 2: Escrever o teste que falha**
 
-Acrescentar a `apps/web/src/features/execucao/ExecucaoDiaView.test.tsx`:
+Acrescentar a `apps/web/src/routes/_app/execucao/escalas/fiscalDia.test.tsx`, reusando o
+mesmo fixture de montagem que os testes vizinhos do arquivo já usam:
 
 ```tsx
-it('a barra de ações fica fixa no rodapé em telas estreitas', () => {
-  const { container } = renderWithProviders(/* ...as props que os testes vizinhos já usam... */);
-  const barra = container.querySelector('[data-barra-acoes]');
-  expect(barra).not.toBeNull();
+it('mantém as ações do dia alcançáveis ao rolar (cabeçalho fixo no topo)', async () => {
+  const { container } = renderWithProviders(<EditorExecucao escalaId={2} data="2026-06-25" />);
+  await screen.findByRole('heading', { name: 'Execução' });
+  expect(container.querySelector('[data-acoes-dia]')).not.toBeNull();
 });
 ```
 
-> Reaproveite exatamente as props de montagem já usadas nos testes vizinhos deste arquivo — não invente um fixture novo.
+> Ajuste o nome do componente e as props ao que os testes vizinhos deste arquivo já montam —
+> **não invente um fixture novo.**
 
 - [ ] **Step 3: Rodar e confirmar que falha**
 
-Run: `pnpm --filter @escalas/web test src/features/execucao/ExecucaoDiaView.test.tsx`
-Expected: FAIL — `barra` é `null`.
+Run: `pnpm --filter @escalas/web test src/routes/_app/execucao/escalas/fiscalDia.test.tsx`
+Expected: FAIL — `[data-acoes-dia]` não existe ainda.
 
-- [ ] **Step 4: Criar `apps/web/src/features/execucao/ExecucaoDiaView.module.css`**
+- [ ] **Step 4: Criar `diaAcoes.module.css`**
+
+A decisão de design, e por quê: **as ações ficam no topo, e o cabeçalho gruda no topo em
+telas estreitas** — em vez de virar uma barra flutuante no rodapé.
+
+Barra no rodapé alcança melhor o polegar, mas aqui as duas ações principais são
+`Fechar para validação` (fiscal) e `Rejeitar` (gestor), ambas de difícil desfazer. Zona do
+polegar é onde acontece o toque acidental. Cabeçalho fixo mantém tudo alcançável sem colocar
+uma ação irreversível debaixo do dedo, e não duplica nenhum nó do DOM.
 
 ```css
-.barraAcoes {
-  display: flex;
-  gap: var(--mantine-spacing-xs);
-  justify-content: flex-end;
-}
-
-/* No celular as ações passam a acompanhar a rolagem: a lista de vagas é
-   longa e o fiscal não deveria rolar até o fim para salvar. */
+/* Em telas estreitas o cabeçalho do dia acompanha a rolagem: a lista de vagas é longa
+   e o fiscal não deveria voltar ao topo para salvar. Acima de sm, comportamento normal. */
 @media (max-width: $mantine-breakpoint-sm) {
-  .barraAcoes {
+  .cabecalhoFixo {
     position: sticky;
-    bottom: 0;
+    top: 0;
     z-index: 2;
-    padding: var(--mantine-spacing-sm);
-    margin: 0 calc(-1 * var(--mantine-spacing-md));
-    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-    border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+    padding-block: var(--mantine-spacing-xs);
+    margin-inline: calc(-1 * var(--mantine-spacing-md));
+    padding-inline: var(--mantine-spacing-md);
+    background-color: light-dark(var(--mantine-color-body), var(--mantine-color-dark-7));
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
   }
 
-  .barraAcoes button {
+  .cabecalhoFixo button {
     flex: 1;
     min-height: 44px; /* alvo de toque mínimo */
   }
 }
 ```
 
-- [ ] **Step 5: Aplicar em `ExecucaoDiaView.tsx`**
+- [ ] **Step 5: Aplicar nas duas rotas**
 
-Envolver o grupo de botões de ação existente:
+Em **ambas** as rotas de dia (execução e validação), envolver o `<PageHeader>` existente:
 
 ```tsx
-import classes from './ExecucaoDiaView.module.css';
+import classes from './diaAcoes.module.css';
 // ...
-<div className={classes.barraAcoes} data-barra-acoes>
-  {/* os mesmos botões que já existiam, sem mudança de handler */}
+<div className={classes.cabecalhoFixo} data-acoes-dia>
+  <PageHeader … />   {/* exatamente como está hoje, sem mudar props */}
 </div>
 ```
 
-- [ ] **Step 6: Empilhar as linhas de vaga no celular**
+A rota de validação importa do caminho da rota de execução
+(`../../execucao/escalas/diaAcoes.module.css`) — um CSS module para as duas telas, que têm o
+mesmo formato. **Não duplique o arquivo.**
 
-Em `ExecucaoVagaRow.tsx`, trocar o `<Group>` de topo por:
+- [ ] **Step 6: Alvos de toque em `ExecucaoVagaRow`**
 
-```tsx
-<Group gap="xs" wrap="wrap" align="flex-start">
-```
-
-E garantir que todo controle interativo da linha tenha altura mínima de toque no celular.
-CSS fica junto do seu componente — criar `apps/web/src/features/execucao/ExecucaoVagaRow.module.css`:
+Criar `apps/web/src/features/execucao/ExecucaoVagaRow.module.css`:
 
 ```css
 @media (max-width: $mantine-breakpoint-sm) {
-  .linhaVaga :is(button, input, [role='combobox']) {
+  .linhaVaga {
+    align-items: flex-start;
+  }
+
+  .linhaVaga :is(button, input, [role='combobox'], [role='radio']) {
     min-height: 44px;
   }
 }
 ```
 
-Em `ExecucaoVagaRow.tsx`, importar `classes from './ExecucaoVagaRow.module.css'` e aplicar
-`className={classes.linhaVaga}` no elemento raiz.
+Aplicar `className={classes.linhaVaga}` no `<Group>` raiz **dos dois caminhos de return**, e
+acrescentar `wrap="wrap"` a ambos para as linhas empilharem em vez de espremerem.
 
 - [ ] **Step 7: Rodar o teste e confirmar que passa**
 
-Run: `pnpm --filter @escalas/web test src/features/execucao`
+Run: `pnpm --filter @escalas/web test src/routes/_app/execucao src/features/execucao`
 Expected: PASS, incluindo o caso novo.
 
 - [ ] **Step 8: Verificação completa e commit**
 
 ```bash
 pnpm --filter @escalas/web test && pnpm --filter @escalas/web build && pnpm --filter @escalas/web lint
-git add apps/web/src/features/execucao
-git commit -m "📱 feat(web): Execução usável em 375px
+git add apps/web/src
+git commit -m "📱 feat(web): Execução e Validação usáveis em 375px
 
-Barra de ações acompanha a rolagem e alvos de toque vão a 44px no celular.
-O fiscal registra no quartel, não na mesa."
+Cabeçalho do dia gruda no topo em telas estreitas e alvos de toque vão a
+44px. O fiscal registra no quartel, não na mesa. Ações ficam no topo de
+propósito: Fechar e Rejeitar são difíceis de desfazer e não devem morar na
+zona do polegar."
 ```
 
 ---
