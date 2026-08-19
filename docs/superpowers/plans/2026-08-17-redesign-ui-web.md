@@ -1605,6 +1605,7 @@ indicador. Publicar vira o único botão preenchido do grupo."
 - Modify: `apps/web/src/routes/_app/execucao/escalas/$id.dias.$data.tsx`
 - Modify: `apps/web/src/routes/_app/validacao/index.tsx`
 - Modify: `apps/web/src/routes/_app/validacao/escalas/$id.dias.$data.tsx`
+- Modify: `apps/web/src/features/execucao/ExecucaoWorklistTable.tsx`
 
 **Interfaces:**
 - Consumes: `PageHeader`, `EmptyState`, `LoadingState`, `ErrorState` de `src/components/ui`.
@@ -1629,16 +1630,32 @@ Mesma transformação da Task 11, Step 1. Os títulos atuais são:
 
 - [ ] **Step 3: Trocar vazios por `<EmptyState />`, preservando a cópia**
 
-As worklists vazias são o caso mais comum aqui — o fiscal abre e não há nada a registrar. Esse estado merece parecer intencional:
+**O estado vazio das duas worklists não vive nas telas — vive no componente compartilhado
+`ExecucaoWorklistTable.tsx:11`**, que hoje faz:
 
 ```tsx
-<EmptyState
-  title="Nada a registrar."
-  description="Todos os dias sob sua responsabilidade já foram registrados."
-/>
+if (itens.length === 0) return <Text c="dimmed" ta="center" py="xl">{emptyText}</Text>;
 ```
 
-Se a string atual for outra, **use a atual como `title`**.
+Trocar por:
+
+```tsx
+if (itens.length === 0) return <EmptyState title={emptyText} />;
+```
+
+A cópia se preserva sozinha, porque vem por prop dos dois chamadores: `execucao/index.tsx:25`
+passa `"Nenhum dia pendente de registro."` e `validacao/index.tsx:25` passa
+`"Nenhum dia aguardando validação."`. **Não reescreva essas strings e não invente
+`description`** — as duas telas compartilham o componente, então qualquer `description` fixa
+aqui apareceria nas duas e mentiria em uma.
+
+Confira se `Text` continua usado no arquivo depois da troca; se não, remova o import
+(`noUnusedLocals`).
+
+> **ARMADILHA — não varra `c="dimmed"` cegamente nesta área.** Os outros cinco usos
+> (`ExecucaoGuarnicaoCard.tsx:21`, `ExecucaoVagaRow.tsx:33,39,51`) são **texto secundário
+> legítimo**: turno da guarnição, militar previsto, observações. Não são estados vazios, não
+> viram `EmptyState`, e converter qualquer um deles quebra a linha de vaga.
 
 - [ ] **Step 4: Rodar os testes de execução e validação**
 
