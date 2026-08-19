@@ -32,6 +32,7 @@ it('gestor valida o dia e mostra notificação', async () => {
     HttpResponse.json({ success: true, message: 'ok', data: diaRegistrada({ execucao_status: 'validada', validado_em: '2026-06-25T12:00:00.000Z' }) })));
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
   await screen.findByRole('heading', { name: 'Validação' });
+  expect(screen.getByText('Dia 2026-06-25')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: /^validar$/i }));
   await waitFor(() => expect(screen.getByText(/execução validada/i)).toBeInTheDocument());
 });
@@ -40,6 +41,7 @@ it('rejeitar exige justificativa (botão confirmar desabilitado sem texto)', asy
   mockBase(diaRegistrada());
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
   await screen.findByRole('heading', { name: 'Validação' });
+  expect(screen.getByText('Dia 2026-06-25')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: /rejeitar/i }));
   expect(screen.getByRole('button', { name: /confirmar rejeição/i })).toBeDisabled();
 });
@@ -50,6 +52,7 @@ it('rejeitar com justificativa envia e notifica', async () => {
     HttpResponse.json({ success: true, message: 'ok', data: diaRegistrada({ execucao_status: 'rejeitada', justificativa: 'refazer' }) })));
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
   await screen.findByRole('heading', { name: 'Validação' });
+  expect(screen.getByText('Dia 2026-06-25')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: /rejeitar/i }));
   await userEvent.type(screen.getByLabelText(/justificativa/i), 'refazer');
   await userEvent.click(screen.getByRole('button', { name: /confirmar rejeição/i }));
@@ -60,5 +63,6 @@ it('quando já validada, não mostra ações', async () => {
   mockBase(diaRegistrada({ execucao_status: 'validada', validado_em: '2026-06-25T12:00:00.000Z' }));
   renderWithProviders(<GestorDiaScreen escalaId={2} data="2026-06-25" />);
   await screen.findByRole('heading', { name: 'Validação' });
+  expect(screen.getByText('Dia 2026-06-25')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /^validar$/i })).not.toBeInTheDocument();
 });
