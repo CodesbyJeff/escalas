@@ -1693,9 +1693,26 @@ Fecha a contagem: depois desta tarefa os quatro números do spec chegam a zero.
 
 - [ ] **Step 1: `PageHeader` nas telas restantes**
 
-Aplicar em `aprovacao/index.tsx`, `aprovacao/escalas/$id.tsx`, `layouts/index.tsx`, `CatalogoFuncoes.tsx`, `PainelView.tsx`, `LayoutEditor.tsx`, `AcoesBloco.tsx` e `PreenchimentoAuto.tsx`.
+São **cinco** títulos de página, todos verificados no código antes desta edição:
 
-**Exceção:** `AcoesBloco` e `PreenchimentoAuto` são **cartões dentro** de uma tela, não telas. Eles não recebem `PageHeader` — mantêm `<Title order={5}>` como cabeçalho de seção. Isso é correto: `PageHeader` é para o título da página.
+| Arquivo | Linha | Hoje |
+|---|---|---|
+| `routes/_app/aprovacao/index.tsx` | 20 | `Title order={3} c="cbmrn.7"` |
+| `routes/_app/aprovacao/escalas/$id.tsx` | 49 | `Title order={4}` |
+| `routes/_app/layouts/index.tsx` | 23 | `Title order={3} c="cbmrn.7"` |
+| `features/funcaoPatentes/CatalogoFuncoes.tsx` | 92 | `Title order={3} c="cbmrn.7"` |
+| `features/painel/PainelView.tsx` | 7 | `Title order={3} c="cbmrn.7"` (ver Step 2) |
+
+**NÃO toque em `AcoesBloco.tsx` nem em `PreenchimentoAuto.tsx`.** A Task 11 já os resolveu, e eles hoje estão em `order={2} fz="h5"` — que é a forma correta. Uma versão anterior deste plano mandava mantê-los em `order={5}`; isso estava **errado** e custou uma rodada de fix na Task 11. Reverter para `{5}` reintroduziria o salto de heading.
+
+**Dois cabeçalhos de SEÇÃO precisam acompanhar**, porque passam a viver sob um `PageHeader` (`order={1}`) e hoje saltam níveis:
+
+| Arquivo | Linha | Hoje | Vira |
+|---|---|---|---|
+| `routes/_app/aprovacao/escalas/$id.tsx` | 72 | `Title order={5} mt="md"` | `order={2} fz="h5" mt="md"` |
+| `features/layouts/LayoutEditor.tsx` | 50 | `Title order={6} mt="sm"` | `order={3} fz="h6" mt="sm"` |
+
+O `LayoutEditor` fica **dentro** de um cartão de layout na página de Layouts, então é seção de terceiro nível: h1 (página) → h2 (cartão do layout) → h3 (vagas). Se o cartão do layout não tiver um heading próprio, use `order={2}` também aqui — confira a estrutura antes de escolher e diga no relatório qual você escolheu e por quê.
 
 - [ ] **Step 2: Painel — trocar a saudação genérica**
 
@@ -1771,9 +1788,13 @@ echo "Titles ad-hoc:";   grep -rln "Title order=" --include=*.tsx . | wc -l
 echo "Hardcodes:";       grep -rn 'bg="gray\|bg="cbmrn\|c="white"\|c="cbmrn' --include=*.tsx . | wc -l
 ```
 
-Expected: `Loader crus: 0`. `Titles ad-hoc` deve restar apenas em `AcoesBloco.tsx`, `PreenchimentoAuto.tsx` e `LayoutEditor.tsx` (cabeçalhos de *seção*, legítimos). `Hardcodes` deve restar apenas as 2 linhas do `LoginForm` (exceção deliberada do Step 3).
+Expected:
 
-**Se sobrar mais que isso, não commite** — encontre o que ficou para trás.
+- **`Loader crus: 0`** — os 5 restantes (`GuardaSessao.tsx`, `aprovacao/escalas/$id.tsx`, `aprovacao/index.tsx`, `layouts/index.tsx`, `painel.tsx`) são exatamente os desta tarefa.
+- **`Hardcodes: 2`** — só as duas linhas do `LoginForm`, exceção deliberada do Step 3. Os outros 4 (`CatalogoFuncoes:92`, `PainelView:7`, `aprovacao/index:20`, `layouts/index:23`) morrem com o `PageHeader`.
+- **`Titles ad-hoc`** deve restar em exatamente **5 arquivos**, todos legítimos: `PageHeader.tsx` (é ele que renderiza o `order={1}`), `LoginForm.tsx` (título da tela de login, que não usa `PageHeader`), `AcoesBloco.tsx` e `PreenchimentoAuto.tsx` (seções, já em `order={2}` desde a Task 11), `LayoutEditor.tsx` e `aprovacao/escalas/$id.tsx` (seções, convertidas no Step 1). Isso dá 6 arquivos — o grep conta arquivos, não ocorrências.
+
+**Se sobrar mais que isso, não commite** — encontre o que ficou para trás. E se sobrar *menos*, você tocou em algo que não devia: confira que `AcoesBloco` e `PreenchimentoAuto` continuam intactos.
 
 - [ ] **Step 6: Verificação completa e commit**
 
