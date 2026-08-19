@@ -6,6 +6,7 @@ import { SeletorDeDia } from '../../../features/escalas/SeletorDeDia';
 import { AcoesBloco } from '../../../features/escalas/AcoesBloco';
 import { PreenchimentoAuto } from '../../../features/escalas/PreenchimentoAuto';
 import { PageHeader, LoadingState } from '../../../components/ui';
+import { COBERTURA } from '../../../theme/semantic';
 
 export const Route = createFileRoute('/_app/escalas/$id/')({ component: DetalhePage });
 
@@ -28,9 +29,9 @@ function DetalhePage() {
         onSelecionar={(data) => navigate({ to: '/escalas/$id/dias/$data', params: { id, data } })}
       />
       <Group>
-        <Box w={16} h={16} bg="green.2" style={{ borderRadius: 4 }} />
+        <Box w={16} h={16} bg={`${COBERTURA.completa.color}.1`} style={{ borderRadius: 4 }} />
         <Text size="sm">Completo</Text>
-        <Box w={16} h={16} bg="yellow.2" style={{ borderRadius: 4 }} />
+        <Box w={16} h={16} bg={`${COBERTURA.parcial.color}.1`} style={{ borderRadius: 4 }} />
         <Text size="sm">Tem vaga aberta (DO)</Text>
       </Group>
       {escalaDetalhe && escalaDetalhe.status === 'rascunho' && (

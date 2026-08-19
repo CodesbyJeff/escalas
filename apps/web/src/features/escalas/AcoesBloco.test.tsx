@@ -15,6 +15,12 @@ function mockLayouts() {
   );
 }
 
+it('usa heading nível 2 para o título de seção (não pula nível sob o h1 da página)', () => {
+  mockLayouts();
+  renderWithProviders(<AcoesBloco escalaId={1} lotacaoId={10} ano={2026} mes={9} />);
+  expect(screen.getByRole('heading', { level: 2, name: /ações de bloco/i })).toBeInTheDocument();
+});
+
 it('gera estrutura no intervalo, envia o payload correto e mostra dias afetados', async () => {
   mockLayouts();
   let capturedBody: unknown = null;

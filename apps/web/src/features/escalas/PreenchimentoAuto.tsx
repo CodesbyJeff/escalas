@@ -46,7 +46,7 @@ export function PreenchimentoAuto({ escalaId, rascunho }: { escalaId: number; ra
   return (
     <Paper p="md" withBorder>
       <Stack>
-        <Title order={5}>Preenchimento Automático</Title>
+        <Title order={2} fz="h5">Preenchimento Automático</Title>
         <Group align="flex-end">
           <TextInput
             label="Data Início" placeholder="YYYY-MM-DD" value={dataIni}

@@ -21,6 +21,11 @@ const sugestoes = [
   },
 ];
 
+it('usa heading nível 2 para o título de seção (não pula nível sob o h1 da página)', () => {
+  renderWithProviders(<PreenchimentoAuto escalaId={1} rascunho />);
+  expect(screen.getByRole('heading', { level: 2, name: /preenchimento automático/i })).toBeInTheDocument();
+});
+
 it('pré-visualiza e renderiza uma linha com militar e motivo', async () => {
   server.use(
     http.post(`${BASE}/escalas/1/sugerir-preenchimento`, () =>
