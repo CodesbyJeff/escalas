@@ -1,0 +1,9 @@
+@media (max-width: $mantine-breakpoint-sm) {
+  .linhaVaga {
+    align-items: flex-start;
+  }
+
+  .linhaVaga :is(button, input, [role='combobox'], [role='radio']) {
+    min-height: 44px;
+  }
+}

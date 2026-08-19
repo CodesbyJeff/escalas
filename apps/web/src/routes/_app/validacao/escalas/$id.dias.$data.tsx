@@ -12,6 +12,7 @@ import { militaresApi } from '../../../../lib/api/militares';
 import { ApiError } from '../../../../lib/api/client';
 import { ExecucaoDiaView } from '../../../../features/execucao/ExecucaoDiaView';
 import { PageHeader, LoadingState } from '../../../../components/ui';
+import classes from '../../execucao/escalas/diaAcoes.module.css';
 
 export const Route = createFileRoute('/_app/validacao/escalas/$id/dias/$data')({ component: GestorDiaPage });
 
@@ -58,16 +59,18 @@ function GestorDiaView({ escalaId, data, dia, getMilitarNome }: {
 
   return (
     <Stack>
-      <PageHeader
-        title="Validação"
-        subtitle={`Dia ${data}`}
-        actions={podeValidar && (
-          <>
-            <Button color="green" onClick={() => validar.mutate({ status: 'validada' })} loading={validar.isPending}>Validar</Button>
-            <Button color="red" variant="light" onClick={rejeitar.open}>Rejeitar</Button>
-          </>
-        )}
-      />
+      <div className={classes.cabecalhoFixo} data-acoes-dia>
+        <PageHeader
+          title="Validação"
+          subtitle={`Dia ${data}`}
+          actions={podeValidar && (
+            <>
+              <Button color="green" onClick={() => validar.mutate({ status: 'validada' })} loading={validar.isPending}>Validar</Button>
+              <Button color="red" variant="light" onClick={rejeitar.open}>Rejeitar</Button>
+            </>
+          )}
+        />
+      </div>
       {dia.execucao_status === 'validada' && <Alert color="green">Dia validado{dia.validado_em ? ` em ${dia.validado_em.slice(0, 10)}` : ''}.</Alert>}
       {dia.execucao_status === 'pendente' && <Alert color="gray">Ainda não fechado pelo fiscal.</Alert>}
       <ExecucaoDiaView escalaId={escalaId} dia={dia} getMilitarNome={getMilitarNome} mode="validar" />

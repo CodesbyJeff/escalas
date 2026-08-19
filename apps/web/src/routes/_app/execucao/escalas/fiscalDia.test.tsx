@@ -62,6 +62,13 @@ it('fecha para validação com confirmação', async () => {
   await waitFor(() => expect(screen.getByText(/execução fechada/i)).toBeInTheDocument());
 });
 
+it('mantém as ações do dia alcançáveis ao rolar (cabeçalho fixo no topo)', async () => {
+  mockBase(diaPendente());
+  const { container } = renderWithProviders(<FiscalDiaScreen escalaId={2} data="2026-06-25" />);
+  await screen.findByRole('heading', { name: 'Execução' });
+  expect(container.querySelector('[data-acoes-dia]')).not.toBeNull();
+});
+
 it('quando registrada, fica somente leitura (sem botões de ação)', async () => {
   mockBase(diaPendente({ execucao_status: 'registrada',
     guarnicoes: [{ id: 1, sigla: 'ABT-01', atividade: 'Incêndio', turno_inicio: '07:00', turno_fim: '19:00', ordem: 0,

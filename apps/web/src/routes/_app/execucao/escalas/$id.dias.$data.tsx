@@ -13,6 +13,7 @@ import { ApiError } from '../../../../lib/api/client';
 import { useExecucaoDraft } from '../../../../features/execucao/useExecucaoDraft';
 import { ExecucaoDiaView } from '../../../../features/execucao/ExecucaoDiaView';
 import { PageHeader, LoadingState } from '../../../../components/ui';
+import classes from './diaAcoes.module.css';
 
 export const Route = createFileRoute('/_app/execucao/escalas/$id/dias/$data')({ component: FiscalDiaPage });
 
@@ -73,16 +74,18 @@ function FiscalDiaForm({ escalaId, data, dia, getMilitarNome }: {
 
   return (
     <Stack>
-      <PageHeader
-        title="Execução"
-        subtitle={`Dia ${data}`}
-        actions={editavel && (
-          <>
-            <Button onClick={() => salvar.mutate()} loading={salvar.isPending}>Salvar</Button>
-            <Button color="cbmrn" onClick={confirm.open}>Fechar para validação</Button>
-          </>
-        )}
-      />
+      <div className={classes.cabecalhoFixo} data-acoes-dia>
+        <PageHeader
+          title="Execução"
+          subtitle={`Dia ${data}`}
+          actions={editavel && (
+            <>
+              <Button onClick={() => salvar.mutate()} loading={salvar.isPending}>Salvar</Button>
+              <Button color="cbmrn" onClick={confirm.open}>Fechar para validação</Button>
+            </>
+          )}
+        />
+      </div>
       {dia.execucao_status === 'validada' && (
         <Alert color="blue">Dia validado.</Alert>
       )}
